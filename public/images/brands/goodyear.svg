@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 100" width="100%" height="100%">
+  <g transform="translate(10, 15)">
+    <!-- GOODYEAR Blue Text -->
+    <text x="5" y="58" font-family="'Arial Black', sans-serif" font-weight="900" font-size="42" fill="#0B2545" font-style="italic" letter-spacing="1">GOOD</text>
+    <!-- Winged Foot Emblem -->
+    <g transform="translate(160, 5) scale(0.7)">
+      <path d="M20 50 C 15 32, 32 15, 55 10 C 60 28, 48 44, 35 56 Z" fill="#FFB800"/>
+      <path d="M30 56 L 60 15 L 48 62 L 72 28 Z" fill="#FFB800"/>
+      <path d="M10 62 H 55 V 72 H 10 Z" fill="#0B2545"/>
+    </g>
+    <text x="228" y="58" font-family="'Arial Black', sans-serif" font-weight="900" font-size="42" fill="#0B2545" font-style="italic" letter-spacing="1">YEAR</text>
+  </g>
+</svg>
