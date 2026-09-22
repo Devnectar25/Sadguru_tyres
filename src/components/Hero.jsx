@@ -36,14 +36,15 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
         justifyContent: "flex-start",
         padding: "20px 0 45px 0",
         overflow: "hidden",
-        background: "#06070a",
+        background: "#14110d",
         textAlign: "left",
       }}
     >
-      {/* 1. FULL-BLEED 3D CINEMATIC BACKGROUND VIDEO */}
+      {/* 1. FULL-BLEED RACING CAR BACKGROUND VIDEO */}
       <video
         ref={videoRef}
         src="/videos/hero_3d_tyre.mp4"
+        poster="/images/tyre_tread_macro.jpg"
         autoPlay
         loop
         muted={isMuted}
@@ -56,7 +57,7 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
           height: "100%",
           objectFit: "cover",
           zIndex: 1,
-          filter: "brightness(0.45) contrast(1.1) grayscale(0.2)",
+          filter: "brightness(0.68) contrast(1.1) saturate(1.15) sepia(0.08)",
         }}
       />
 
@@ -67,8 +68,8 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
           inset: 0,
           zIndex: 2,
           background: `
-            linear-gradient(to bottom, rgba(6, 7, 10, 0.75) 0%, rgba(6, 7, 10, 0.4) 40%, rgba(6, 7, 10, 0.95) 100%),
-            linear-gradient(to right, rgba(6, 7, 10, 0.92) 0%, rgba(6, 7, 10, 0.5) 55%, rgba(6, 7, 10, 0.85) 100%)
+            linear-gradient(to bottom, rgba(20, 17, 13, 0.55) 0%, rgba(20, 17, 13, 0.25) 40%, rgba(20, 17, 13, 0.88) 100%),
+            linear-gradient(to right, rgba(20, 17, 13, 0.75) 0%, rgba(20, 17, 13, 0.3) 55%, rgba(20, 17, 13, 0.65) 100%)
           `,
           pointerEvents: "none",
         }}
@@ -124,7 +125,7 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
             Engineered for <br />
             <span
               style={{
-                background: "linear-gradient(180deg, #ffffff 30%, #94a3b8 100%)",
+                background: "linear-gradient(180deg, #f7f1e7 30%, #d9822f 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 userSelect: "none",
@@ -179,21 +180,21 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
                 cursor: "pointer",
                 transition: "var(--transition-smooth)",
                 border: "none",
-                background: "linear-gradient(135deg, #ffffff, #e2e8f0)",
-                color: "#08090c",
-                boxShadow: "0 10px 25px rgba(255, 255, 255, 0.15)",
+                background: "linear-gradient(135deg, #eba763, #cf7a30)",
+                color: "#1c1712",
+                boxShadow: "0 10px 25px rgba(217, 130, 47, 0.25)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 14px 30px rgba(255, 255, 255, 0.25)";
+                e.currentTarget.style.boxShadow = "0 14px 30px rgba(217, 130, 47, 0.4)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 10px 25px rgba(255, 255, 255, 0.15)";
+                e.currentTarget.style.boxShadow = "0 10px 25px rgba(217, 130, 47, 0.25)";
               }}
             >
               Explore Tyres
-              <ChevronRight size={18} color="#08090c" />
+              <ChevronRight size={18} color="#1c1712" />
             </button>
 
             <button

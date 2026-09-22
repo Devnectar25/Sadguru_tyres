@@ -117,7 +117,7 @@ export default function Navbar({
                   fontSize: "1.35rem",
                   fontWeight: "800",
                   letterSpacing: "0.08em",
-                  color: "#ffffff",
+                  color: "#dad8d3ff",
                   lineHeight: 1.1,
                   display: "flex",
                   alignItems: "center",

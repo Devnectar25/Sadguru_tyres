@@ -183,10 +183,10 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
                     fontSize: "0.74rem",
                     fontWeight: "700",
                     color: "var(--accent-cyan)",
-                    background: "rgba(0, 240, 255, 0.1)",
+                    background: "rgba(91, 138, 131, 0.12)",
                     padding: "4px 10px",
                     borderRadius: "999px",
-                    border: "1px solid rgba(0, 240, 255, 0.25)",
+                    border: "1px solid rgba(91, 138, 131, 0.28)",
                   }}
                 >
                   {d.distance}

@@ -108,15 +108,15 @@ export default function TyreFinder({ onFilterApply }) {
                     cursor: "pointer",
                     transition: "var(--transition-smooth)",
                     background: isSelected
-                      ? "linear-gradient(135deg, #ffffff, #e2e8f0)"
+                      ? "linear-gradient(135deg, #eba763, #cf7a30)"
                       : "rgba(255, 255, 255, 0.04)",
                     border: isSelected
-                      ? "1px solid #ffffff"
+                      ? "1px solid #eba763"
                       : "1px solid rgba(255, 255, 255, 0.08)",
                     color: isSelected ? "#07080b" : "var(--text-silver)",
                     fontWeight: isSelected ? "700" : "500",
                     fontSize: "0.88rem",
-                    boxShadow: isSelected ? "0 4px 15px rgba(255, 255, 255, 0.2)" : "none",
+                    boxShadow: isSelected ? "0 4px 15px rgba(217, 130, 47, 0.28)" : "none",
                   }}
                 >
                   {type.id === "sedan" && <Car size={18} color={isSelected ? "#07080b" : "currentColor"} />}
@@ -297,8 +297,8 @@ export default function TyreFinder({ onFilterApply }) {
               style={{
                 marginTop: "24px",
                 padding: "14px 20px",
-                background: "rgba(0, 240, 255, 0.08)",
-                border: "1px solid rgba(0, 240, 255, 0.3)",
+                background: "rgba(91, 138, 131, 0.1)",
+                border: "1px solid rgba(91, 138, 131, 0.32)",
                 borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",

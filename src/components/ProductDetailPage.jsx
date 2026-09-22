@@ -43,6 +43,7 @@ export default function ProductDetailPage({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [is360Mode, setIs360Mode] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(true);
   const [selectedSize, setSelectedSize] = useState(tyre.availableSizes[0] || "");
   const [activeTab, setActiveTab] = useState("overview"); // overview, specs, performance, tech, safety, reviews
 
@@ -154,39 +155,87 @@ export default function ProductDetailPage({
               {/* Normal vs 360 Render */}
               {is360Mode ? (
                 <div style={{ textAlign: "center", width: "100%" }}>
+                  {/* Spinning Tyre Container */}
                   <div
                     style={{
                       height: "300px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      transform: `rotateY(${rotationAngle}deg)`,
-                      transition: "transform 0.4s ease-out",
+                      perspective: "900px",
                     }}
                   >
                     <img
                       src={tyre.gallery[activeImageIndex] || tyre.image}
                       alt={tyre.name}
                       style={{
-                        maxHeight: "100%",
-                        maxWidth: "100%",
+                        maxHeight: "260px",
+                        maxWidth: "260px",
                         objectFit: "contain",
-                        filter: "drop-shadow(0 20px 30px rgba(0, 0, 0, 0.9))",
+                        filter: "drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 30px rgba(217,130,47,0.25))",
+                        animation: isSpinning
+                          ? "tyreWheelSpin 3s linear infinite"
+                          : "none",
+                        transform: isSpinning ? undefined : `rotateY(${rotationAngle}deg)`,
+                        transition: isSpinning ? undefined : "transform 0.35s ease-out",
+                        transformStyle: "preserve-3d",
                       }}
                     />
                   </div>
-                  {/* 360 Angle Controls */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px", marginTop: "16px" }}>
-                    <button onClick={rotateLeft} className="btn btn-secondary" style={{ padding: "6px 14px", fontSize: "0.75rem" }}>
-                      ↺ Rotate Left
+
+                  {/* 360 Controls */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginTop: "16px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => { setIsSpinning(false); setRotationAngle((a) => (a - 45 + 360) % 360); }}
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 14px", fontSize: "0.75rem" }}
+                    >
+                      ↺ Step Back
                     </button>
-                    <span style={{ fontSize: "0.8rem", color: "var(--accent-cyan)", fontWeight: "700" }}>
-                      {rotationAngle}° Angle
-                    </span>
-                    <button onClick={rotateRight} className="btn btn-secondary" style={{ padding: "6px 14px", fontSize: "0.75rem" }}>
-                      Rotate Right ↻
+
+                    <button
+                      onClick={() => setIsSpinning(!isSpinning)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "7px 18px",
+                        borderRadius: "999px",
+                        background: isSpinning ? "rgba(217,130,47,0.18)" : "rgba(255,255,255,0.07)",
+                        border: isSpinning ? "1px solid rgba(217,130,47,0.6)" : "1px solid rgba(255,255,255,0.2)",
+                        color: isSpinning ? "#eba763" : "#ffffff",
+                        fontSize: "0.78rem",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <RotateCw size={13} style={{ animation: isSpinning ? "tyreWheelSpin 1s linear infinite" : "none" }} />
+                      {isSpinning ? "🔄 Spinning…" : "▶ Spin Tyre"}
+                    </button>
+
+                    <button
+                      onClick={() => { setIsSpinning(false); setRotationAngle((a) => (a + 45) % 360); }}
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 14px", fontSize: "0.75rem" }}
+                    >
+                      Step Fwd ↻
                     </button>
                   </div>
+
+                  {!isSpinning && (
+                    <div style={{ marginTop: "8px", fontSize: "0.76rem", color: "var(--accent-cyan)", fontWeight: "700" }}>
+                      {rotationAngle}° — Click "Auto Spin" to resume
+                    </div>
+                  )}
+
+                  {/* Keyframe injection */}
+                  <style>{`
+                    @keyframes tyreWheelSpin {
+                      from { transform: rotateY(0deg); }
+                      to   { transform: rotateY(360deg); }
+                    }
+                  `}</style>
                 </div>
               ) : (
                 <>
@@ -403,10 +452,10 @@ export default function ProductDetailPage({
                     fontSize: "0.75rem",
                     fontWeight: "700",
                     color: "var(--accent-cyan)",
-                    background: "rgba(0, 240, 255, 0.1)",
+                    background: "rgba(91, 138, 131, 0.12)",
                     padding: "4px 10px",
                     borderRadius: "999px",
-                    border: "1px solid rgba(0, 240, 255, 0.25)",
+                    border: "1px solid rgba(91, 138, 131, 0.28)",
                     display: "inline-block",
                   }}
                 >
@@ -540,12 +589,12 @@ export default function ProductDetailPage({
             }}
           >
             {[
-              { key: "grip", title: "Dry & Cornering Grip", icon: Activity, data: tyre.visualSpecs.grip, color: "var(--accent-crimson)" },
-              { key: "mileage", title: "Treadwear Mileage", icon: Calendar, data: tyre.visualSpecs.mileage, color: "var(--accent-amber)" },
-              { key: "wetPerformance", title: "Wet & Hydro-Braking", icon: ShieldCheck, data: tyre.visualSpecs.wetPerformance, color: "var(--accent-cyan)" },
-              { key: "comfort", title: "Ride Suppleness & Comfort", icon: Layers, data: tyre.visualSpecs.comfort, color: "#10B981" },
-              { key: "noise", title: "Cabin Acoustic Dampening", icon: Volume2, data: tyre.visualSpecs.noise, color: "#A78BFA" },
-              { key: "durability", title: "Puncture & Impact Durability", icon: Award, data: tyre.visualSpecs.durability, color: "#F43F5E" },
+              { key: "grip", title: "Dry & Cornering Grip", icon: Activity, data: tyre.visualSpecs.grip, color: "#F59E0B" },
+              { key: "mileage", title: "Treadwear Mileage", icon: Calendar, data: tyre.visualSpecs.mileage, color: "#F59E0B" },
+              { key: "wetPerformance", title: "Wet & Hydro-Braking", icon: ShieldCheck, data: tyre.visualSpecs.wetPerformance, color: "#F59E0B" },
+              { key: "comfort", title: "Ride Suppleness & Comfort", icon: Layers, data: tyre.visualSpecs.comfort, color: "#F59E0B" },
+              { key: "noise", title: "Cabin Acoustic Dampening", icon: Volume2, data: tyre.visualSpecs.noise, color: "#F59E0B" },
+              { key: "durability", title: "Puncture & Impact Durability", icon: Award, data: tyre.visualSpecs.durability, color: "#F59E0B" },
             ].map((spec) => {
               const Icon = spec.icon;
               return (

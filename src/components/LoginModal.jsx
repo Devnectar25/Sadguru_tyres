@@ -272,7 +272,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
               padding: "14px",
               borderRadius: "10px",
               border: "none",
-              background: "linear-gradient(135deg, #ffffff, #e2e8f0)",
+              background: "linear-gradient(135deg, #eba763, #cf7a30)",
               color: "#07080b",
               fontWeight: "700",
               fontSize: "0.95rem",

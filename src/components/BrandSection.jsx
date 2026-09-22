@@ -62,7 +62,6 @@ export default function BrandSection() {
             {brands.map((brand) => (
               <div
                 key={brand.id}
-                className="glass-card"
                 style={{
                   padding: "16px 20px 12px 20px",
                   borderRadius: "18px",
@@ -74,19 +73,8 @@ export default function BrandSection() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "8px",
-                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                   boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
                   cursor: "default",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 16px 36px rgba(255, 255, 255, 0.35)";
-                  e.currentTarget.style.background = "#ffffff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.5)";
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.98)";
                 }}
               >
                 <div
@@ -108,8 +96,6 @@ export default function BrandSection() {
                       width: "100%",
                       height: "100%",
                       objectFit: "contain",
-                      transform: "scale(1.18)",
-                      filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.12))",
                     }}
                   />
                 </div>

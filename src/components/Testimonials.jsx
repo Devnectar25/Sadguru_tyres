@@ -52,7 +52,7 @@ function RotationalRatingGauge({ score = 5.0, id }) {
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ff2a2a" />
             <stop offset="50%" stopColor="#FFB800" />
-            <stop offset="100%" stopColor="#00f0ff" />
+            <stop offset="100%" stopColor="#5b8a83" />
           </linearGradient>
         </defs>
       </svg>
