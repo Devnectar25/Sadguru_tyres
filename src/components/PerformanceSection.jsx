@@ -128,13 +128,13 @@ export default function PerformanceSection() {
               gap: "10px",
               padding: "12px 26px",
               borderRadius: "12px",
-              background: weatherMode === "wet" ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.04)",
+              background: weatherMode === "wet" ? "rgba(91, 138, 131, 0.22)" : "rgba(255, 255, 255, 0.04)",
               border: weatherMode === "wet" ? "1px solid var(--accent-cyan)" : "1px solid rgba(255, 255, 255, 0.08)",
               color: weatherMode === "wet" ? "#ffffff" : "var(--text-dim)",
               fontWeight: "700",
               cursor: "pointer",
               transition: "var(--transition-smooth)",
-              boxShadow: weatherMode === "wet" ? "0 0 20px rgba(0, 240, 255, 0.3)" : "none",
+              boxShadow: weatherMode === "wet" ? "0 0 20px rgba(91, 138, 131, 0.32)" : "none",
             }}
           >
             <CloudRain size={18} color={weatherMode === "wet" ? "var(--accent-cyan)" : "currentColor"} />

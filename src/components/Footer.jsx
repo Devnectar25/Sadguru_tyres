@@ -80,7 +80,7 @@ export default function Footer({ onOpenFinder }) {
                 />
               </div>
               <div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.25rem", fontWeight: "800", color: "#fff" }}>
+                <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.25rem", fontWeight: "500", color: "#dad7d1ff", letterSpacing: "0.06em" }}>
                   SADGURU <span style={{ color: "#ff2a2a", textShadow: "0 0 10px rgba(255, 42, 42, 0.4)" }}>TYRES</span>
                 </div>
                 <div style={{ fontSize: "0.62rem", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase" }}>
