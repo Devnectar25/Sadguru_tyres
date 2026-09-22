@@ -54,7 +54,7 @@ select,
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   color-scheme: dark;
   background-color: var(--bg-dark);
 }
@@ -403,33 +403,25 @@ textarea {
   animation: textComingSlide 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Scroll Section Coming Entrance Animation - Smooth One-After-Another Sequence */
+/* Scroll Reveal - Disabled */
 .reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(55px) scale(0.975);
-  filter: blur(6px);
-  transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.95s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform, filter;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+  will-change: auto;
 }
 
 .reveal-on-scroll.is-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0px);
+  transform: none;
+  filter: none;
 }
 
-.animate-delay-1 {
-  animation-delay: 0.15s !important;
-}
-
-.animate-delay-2 {
-  animation-delay: 0.35s !important;
-}
-
+.animate-delay-1,
+.animate-delay-2,
 .animate-delay-3 {
-  animation-delay: 0.55s !important;
+  animation-delay: 0s !important;
 }
 
 /* Modal Overlay & Backdrop */
