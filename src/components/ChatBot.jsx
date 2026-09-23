@@ -17,7 +17,9 @@ export default function ChatBot({
   const [showHoverPopup, setShowHoverPopup] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const hoverTimerRef = useRef(null);
+  const scrollPositionRef = useRef(0);
 
   const [messages, setMessages] = useState([
     {
@@ -76,26 +78,114 @@ export default function ChatBot({
     };
   }, [isOpen]);
 
+  // Mobile virtual keyboard & dynamic visual viewport tracking
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleViewportChange = () => {
+      if (typeof window === "undefined") return;
+      const isMobile = window.innerWidth <= 768;
+
+      if (!isMobile) {
+        if (chatWindowRef.current) {
+          chatWindowRef.current.style.removeProperty("--chatbot-height");
+          chatWindowRef.current.style.removeProperty("--chatbot-top");
+        }
+        setIsKeyboardOpen(false);
+        return;
+      }
+
+      if (window.visualViewport && chatWindowRef.current) {
+        const vv = window.visualViewport;
+        const height = Math.round(vv.height);
+        const top = Math.round(vv.offsetTop || 0);
+
+        chatWindowRef.current.style.setProperty("--chatbot-height", `${height}px`);
+        chatWindowRef.current.style.setProperty("--chatbot-top", `${top}px`);
+
+        // Check if virtual keyboard is active (viewport height noticeably reduced)
+        const keyboardActive = height < window.innerHeight - 100;
+        setIsKeyboardOpen(keyboardActive);
+
+        // Keep page document locked at top so no white space or drift occurs
+        if (window.scrollY !== 0) {
+          window.scrollTo(0, 0);
+        }
+      }
+    };
+
+    handleViewportChange();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleViewportChange);
+      window.visualViewport.addEventListener("scroll", handleViewportChange);
+    }
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", handleViewportChange);
+        window.visualViewport.removeEventListener("scroll", handleViewportChange);
+      }
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [isOpen]);
+
+  // Lock mobile body scroll at current position while open
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 200);
       if (typeof window !== "undefined" && window.innerWidth <= 768) {
+        scrollPositionRef.current = window.scrollY || window.pageYOffset || 0;
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${scrollPositionRef.current}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
         document.body.style.overflow = "hidden";
       }
     } else {
-      if (typeof document !== "undefined") {
+      if (typeof document !== "undefined" && document.body.style.position === "fixed") {
+        const restoreY = scrollPositionRef.current;
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
         document.body.style.overflow = "";
+        window.scrollTo(0, restoreY);
       }
     }
+
     return () => {
-      if (typeof document !== "undefined") {
+      if (typeof document !== "undefined" && document.body.style.position === "fixed") {
+        const restoreY = scrollPositionRef.current;
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
         document.body.style.overflow = "";
+        window.scrollTo(0, restoreY);
       }
     };
+  }, [isOpen]);
+
+  // Auto-scroll messages to bottom on update
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
   }, [isOpen, messages, isTyping]);
+
+  // Auto-focus input on DESKTOP ONLY (never auto-focus on mobile to prevent virtual keyboard jump)
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined" && window.innerWidth > 768) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     return () => {
@@ -389,14 +479,15 @@ export default function ChatBot({
           {/* Floating Action Circular Button - White with Red Bot Icon */}
           <button
             onClick={handleToggle}
-            aria-label="Open Tyre Chatbot"
-            title="Chat with Tyre Assistant"
+            aria-label="Open SGT Chatbot"
+            title="Chat with SGT Assistant"
+            className="chatbot-fab-btn"
             style={{
-              width: "58px",
-              height: "58px",
+              width: "60px",
+              height: "60px",
               borderRadius: "50%",
               background: "#ffffff",
-              border: "2px solid #ef4444",
+              border: "2.5px solid #ef4444",
               color: "#ef4444",
               display: "flex",
               alignItems: "center",
@@ -417,7 +508,7 @@ export default function ChatBot({
               e.currentTarget.style.boxShadow = "0 10px 28px rgba(15, 23, 42, 0.16), 0 4px 14px rgba(239, 68, 68, 0.25)";
             }}
           >
-            <Bot size={28} color="#ef4444" />
+            <Bot size={32} strokeWidth={2.3} color="#ef4444" className="chatbot-fab-icon" />
           </button>
         </div>
       )}
@@ -426,7 +517,7 @@ export default function ChatBot({
       {isOpen && (
         <div
           ref={chatWindowRef}
-          className="chatbot-window"
+          className={`chatbot-window ${isKeyboardOpen ? "keyboard-open" : ""}`}
           style={{
             position: "fixed",
             bottom: "1px",
@@ -525,6 +616,7 @@ export default function ChatBot({
 
           {/* Quick Shortcuts Bar */}
           <div
+            className="chatbot-shortcuts-bar hide-scrollbar"
             style={{
               padding: "8px 12px",
               background: "#f8fafc",
@@ -577,7 +669,8 @@ export default function ChatBot({
             ref={messagesContainerRef}
             className="chatbot-messages-area hide-scrollbar"
             style={{
-              flexGrow: 1,
+              flex: "1 1 0%",
+              minHeight: 0,
               padding: "16px",
               overflowY: "auto",
               display: "flex",
@@ -786,7 +879,7 @@ export default function ChatBot({
                 borderRadius: "999px",
                 border: "1px solid #cbd5e1",
                 background: "#f8fafc",
-                fontSize: "0.85rem",
+                fontSize: "16px",
                 outline: "none",
                 color: "#0f172a",
                 transition: "border-color 0.2s",
@@ -794,10 +887,20 @@ export default function ChatBot({
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#ef4444";
                 e.currentTarget.style.background = "#ffffff";
+                if (typeof window !== "undefined" && window.innerWidth <= 768) {
+                  window.scrollTo(0, 0);
+                  setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    scrollToBottom();
+                  }, 120);
+                }
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = "#cbd5e1";
                 e.currentTarget.style.background = "#f8fafc";
+                if (typeof window !== "undefined" && window.innerWidth <= 768) {
+                  window.scrollTo(0, 0);
+                }
               }}
             />
             <button
@@ -865,32 +968,65 @@ export default function ChatBot({
         }
         @media (max-width: 768px) {
           .chatbot-fab-container {
-            bottom: 16px !important;
-            right: 14px !important;
+            bottom: 18px !important;
+            right: 16px !important;
+          }
+          .chatbot-fab-btn {
+            width: 64px !important;
+            height: 64px !important;
+            border-width: 2.5px !important;
+          }
+          .chatbot-fab-icon {
+            width: 36px !important;
+            height: 36px !important;
+            stroke-width: 2.3px !important;
           }
           .chatbot-window {
             position: fixed !important;
-            top: 0 !important;
+            top: var(--chatbot-top, 0px) !important;
             left: 0 !important;
             right: 0 !important;
-            bottom: 0 !important;
+            bottom: auto !important;
             width: 100vw !important;
             max-width: 100vw !important;
-            height: 100vh !important;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
+            height: var(--chatbot-height, 100dvh) !important;
+            max-height: var(--chatbot-height, 100dvh) !important;
             border-radius: 0 !important;
             border: none !important;
             box-shadow: none !important;
             z-index: 99999 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
             animation: mobileChatScreenOpen 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
           }
           .chatbot-header {
+            flex-shrink: 0 !important;
             padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
             border-radius: 0 !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+          }
+          .chatbot-shortcuts-bar {
+            flex-shrink: 0 !important;
+          }
+          .chatbot-window.keyboard-open .chatbot-shortcuts-bar {
+            display: none !important;
+          }
+          .chatbot-messages-area {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
           }
           .chatbot-input-footer {
+            flex-shrink: 0 !important;
             padding-bottom: max(14px, env(safe-area-inset-bottom, 14px)) !important;
+          }
+          .chatbot-window.keyboard-open .chatbot-input-footer {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
           }
           .chatbot-input-field {
             font-size: 16px !important;
