@@ -66,6 +66,9 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
         style={{
           maxWidth: "720px",
           padding: "30px",
+          background: "#ffffff",
+          borderRadius: "24px",
+          color: "#0f172a",
         }}
       >
         {/* Header */}
@@ -75,21 +78,34 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
             alignItems: "center",
             justifyContent: "space-between",
             paddingBottom: "18px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: "1px solid #e2e8f0",
             marginBottom: "20px",
           }}
         >
           <div>
-            <div className="badge-pill" style={{ marginBottom: "6px" }}>
-              <Navigation size={13} color="var(--accent-crimson)" />
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 12px",
+                borderRadius: "9999px",
+                background: "rgba(239, 68, 68, 0.1)",
+                color: "#ef4444",
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                marginBottom: "6px",
+              }}
+            >
+              <Navigation size={13} color="#ef4444" />
               AUTHORIZED SERVICE NETWORK
             </div>
-            <h3 style={{ fontSize: "1.4rem", color: "#fff" }}>
+            <h3 style={{ fontSize: "1.4rem", color: "#0f172a", fontWeight: "800" }}>
               Find an Authorized Dealer Near You
             </h3>
             {tyre && (
-              <p style={{ fontSize: "0.84rem", color: "var(--text-dim)", marginTop: "2px" }}>
-                Checking real-time bay availability for <strong style={{ color: "#fff" }}>{tyre.name}</strong>
+              <p style={{ fontSize: "0.84rem", color: "#64748b", marginTop: "2px" }}>
+                Checking real-time bay availability for <strong style={{ color: "#0f172a" }}>{tyre.name}</strong>
               </p>
             )}
           </div>
@@ -97,9 +113,9 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              color: "var(--text-dim)",
+              background: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              color: "#0f172a",
               width: "36px",
               height: "36px",
               borderRadius: "50%",
@@ -114,30 +130,26 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
         </div>
 
         {/* Search input */}
-        <div
-          style={{
-            position: "relative",
-            marginBottom: "20px",
-          }}
-        >
+        <div style={{ position: "relative", marginBottom: "20px" }}>
           <Search
             size={18}
-            color="var(--text-muted)"
+            color="#64748b"
             style={{ position: "absolute", left: "14px", top: "14px" }}
           />
           <input
             type="text"
-            placeholder="Search by city, area, or pin code (e.g. Mumbai, Pune, Delhi, Bengaluru)..."
+            placeholder="Search by city, area, or pin code..."
             value={searchCity}
             onChange={(e) => setSearchCity(e.target.value)}
             style={{
               width: "100%",
               padding: "12px 14px 12px 42px",
-              borderRadius: "10px",
-              background: "#131722",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              color: "#ffffff",
+              borderRadius: "12px",
+              background: "#f8fafc",
+              border: "1px solid #cbd5e1",
+              color: "#0f172a",
               fontSize: "0.92rem",
+              fontWeight: "600",
               outline: "none",
             }}
           />
@@ -158,9 +170,9 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
               key={d.id}
               style={{
                 padding: "20px",
-                borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                borderRadius: "16px",
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
                 display: "flex",
                 flexDirection: "column",
                 gap: "10px",
@@ -169,11 +181,11 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontSize: "1.05rem", fontWeight: "700", color: "#ffffff" }}>
+                  <div style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a" }}>
                     {d.name}
                   </div>
-                  <div style={{ fontSize: "0.82rem", color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
-                    <MapPin size={14} color="var(--accent-crimson)" />
+                  <div style={{ fontSize: "0.82rem", color: "#64748b", display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                    <MapPin size={14} color="#ef4444" />
                     {d.address}
                   </div>
                 </div>
@@ -182,31 +194,31 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
                   style={{
                     fontSize: "0.74rem",
                     fontWeight: "700",
-                    color: "var(--accent-cyan)",
-                    background: "rgba(91, 138, 131, 0.12)",
-                    padding: "4px 10px",
-                    borderRadius: "999px",
-                    border: "1px solid rgba(91, 138, 131, 0.28)",
+                    color: "#0284c7",
+                    background: "#eff6ff",
+                    padding: "4px 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid #bae6fd",
                   }}
                 >
                   {d.distance}
                 </span>
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "0.8rem", color: "#64748b" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Phone size={13} color="var(--accent-crimson)" /> {d.phone}
+                  <Phone size={13} color="#ef4444" /> {d.phone}
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <Clock size={13} /> {d.hours}
                 </span>
-                <span style={{ color: "#34D399", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ color: "#16a34a", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
                   <CheckCircle2 size={13} /> {d.stockStatus}
                 </span>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
                   {d.equipment}
                 </span>
 
@@ -215,8 +227,16 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
                     onSelectDealer(d);
                     onClose();
                   }}
-                  className="btn btn-outline-crimson"
-                  style={{ padding: "6px 14px", fontSize: "0.78rem" }}
+                  style={{
+                    padding: "6px 16px",
+                    fontSize: "0.78rem",
+                    fontWeight: "700",
+                    borderRadius: "9999px",
+                    background: "#0f172a",
+                    color: "#ffffff",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   Select This Bay
                 </button>

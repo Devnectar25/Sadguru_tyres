@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { X, Lock, Mail, User, ShieldCheck, ArrowRight, KeyRound } from "lucide-react";
+import { X, Lock, Mail, User, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function LoginModal({ onClose, onLoginSuccess }) {
-  const [tab, setTab] = useState("client"); // "client" | "dealer"
+  const [tab, setTab] = useState("client");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,32 +32,33 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(5, 6, 8, 0.85)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(15, 23, 42, 0.6)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         zIndex: 2000,
         padding: "20px",
       }}
     >
       <div
-        className="modal-content glass-panel"
         style={{
           maxWidth: "460px",
           width: "100%",
           margin: "auto",
           padding: 0,
           overflow: "hidden",
-          border: "1px solid rgba(255, 255, 255, 0.18)",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 255, 255, 0.1)",
+          background: "#ffffff",
+          borderRadius: "24px",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Header */}
+        {/* Header */}
         <div
           style={{
             padding: "24px 28px 20px",
-            background: "linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%)",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#f8fafc",
+            borderBottom: "1px solid #e2e8f0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -69,21 +70,20 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                 width: "36px",
                 height: "36px",
                 borderRadius: "10px",
-                background: "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
+                background: "rgba(239, 68, 68, 0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#ffffff",
+                color: "#ef4444",
               }}
             >
               <User size={20} />
             </div>
             <div>
-              <h3 style={{ fontSize: "1.2rem", color: "#ffffff", margin: 0, fontWeight: "700" }}>
+              <h3 style={{ fontSize: "1.2rem", color: "#0f172a", margin: 0, fontWeight: "800" }}>
                 Client Access Portal
               </h3>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", margin: 0 }}>
+              <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>
                 Sadguru Tyres Luxury Member Network
               </p>
             </div>
@@ -92,20 +92,17 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
               borderRadius: "50%",
               width: "32px",
               height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "var(--text-silver)",
+              color: "#0f172a",
               cursor: "pointer",
-              transition: "all 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
           >
             <X size={16} />
           </button>
@@ -116,10 +113,10 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
           <div
             style={{
               display: "flex",
-              background: "rgba(0, 0, 0, 0.4)",
+              background: "#f1f5f9",
               padding: "4px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "9999px",
+              border: "1px solid #e2e8f0",
             }}
           >
             <button
@@ -130,12 +127,11 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                 padding: "8px 0",
                 fontSize: "0.82rem",
                 fontWeight: "700",
-                borderRadius: "8px",
+                borderRadius: "9999px",
                 border: "none",
-                background: tab === "client" ? "#ffffff" : "transparent",
-                color: tab === "client" ? "#07080b" : "var(--text-dim)",
+                background: tab === "client" ? "#ef4444" : "transparent",
+                color: tab === "client" ? "#ffffff" : "#475569",
                 cursor: "pointer",
-                transition: "all 0.25s",
               }}
             >
               Member Login
@@ -148,12 +144,11 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                 padding: "8px 0",
                 fontSize: "0.82rem",
                 fontWeight: "700",
-                borderRadius: "8px",
+                borderRadius: "9999px",
                 border: "none",
-                background: tab === "dealer" ? "#ffffff" : "transparent",
-                color: tab === "dealer" ? "#07080b" : "var(--text-dim)",
+                background: tab === "dealer" ? "#ef4444" : "transparent",
+                color: tab === "dealer" ? "#ffffff" : "#475569",
                 cursor: "pointer",
-                transition: "all 0.25s",
               }}
             >
               Dealer / Fleet Portal
@@ -168,8 +163,8 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
               style={{
                 display: "block",
                 fontSize: "0.8rem",
-                fontWeight: "600",
-                color: "var(--text-silver)",
+                fontWeight: "700",
+                color: "#0f172a",
                 marginBottom: "8px",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -185,7 +180,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                   left: "14px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "var(--text-dim)",
+                  color: "#64748b",
                 }}
               />
               <input
@@ -197,15 +192,14 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                 style={{
                   width: "100%",
                   padding: "12px 14px 12px 44px",
-                  borderRadius: "10px",
-                  background: "rgba(15, 20, 28, 0.9)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "#ffffff",
+                  borderRadius: "12px",
+                  background: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  color: "#0f172a",
                   fontSize: "0.92rem",
+                  fontWeight: "600",
                   outline: "none",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#ffffff")}
-                onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.15)")}
               />
             </div>
           </div>
@@ -215,8 +209,8 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
               <label
                 style={{
                   fontSize: "0.8rem",
-                  fontWeight: "600",
-                  color: "var(--text-silver)",
+                  fontWeight: "700",
+                  color: "#0f172a",
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
                 }}
@@ -226,9 +220,9 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
               <a
                 href="#forgot"
                 onClick={(e) => e.preventDefault()}
-                style={{ fontSize: "0.76rem", color: "var(--text-dim)", textDecoration: "underline" }}
+                style={{ fontSize: "0.76rem", color: "#ef4444", textDecoration: "underline", fontWeight: "600" }}
               >
-                Forgot Code?
+                Forgot Password?
               </a>
             </div>
             <div style={{ position: "relative" }}>
@@ -239,7 +233,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                   left: "14px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "var(--text-dim)",
+                  color: "#64748b",
                 }}
               />
               <input
@@ -251,15 +245,14 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
                 style={{
                   width: "100%",
                   padding: "12px 14px 12px 44px",
-                  borderRadius: "10px",
-                  background: "rgba(15, 20, 28, 0.9)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "#ffffff",
+                  borderRadius: "12px",
+                  background: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  color: "#0f172a",
                   fontSize: "0.92rem",
+                  fontWeight: "600",
                   outline: "none",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#ffffff")}
-                onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.15)")}
               />
             </div>
           </div>
@@ -270,10 +263,10 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
             style={{
               width: "100%",
               padding: "14px",
-              borderRadius: "10px",
+              borderRadius: "9999px",
               border: "none",
-              background: "linear-gradient(135deg, #eba763, #cf7a30)",
-              color: "#07080b",
+              background: "linear-gradient(135deg, #ef4444, #dc2626)",
+              color: "#ffffff",
               fontWeight: "700",
               fontSize: "0.95rem",
               letterSpacing: "0.04em",
@@ -283,11 +276,8 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
-              boxShadow: "0 8px 25px rgba(255, 255, 255, 0.2)",
-              transition: "all 0.25s",
+              boxShadow: "0 6px 20px rgba(239, 68, 68, 0.3)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
             {isSubmitting ? (
               <span>Authenticating...</span>
@@ -303,16 +293,16 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
             style={{
               marginTop: "20px",
               paddingTop: "16px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              borderTop: "1px solid #e2e8f0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
               fontSize: "0.76rem",
-              color: "var(--text-dim)",
+              color: "#64748b",
             }}
           >
-            <ShieldCheck size={14} color="#34D399" />
+            <ShieldCheck size={14} color="#16a34a" />
             <span>256-Bit SSL Encrypted Automotive Portal</span>
           </div>
         </form>

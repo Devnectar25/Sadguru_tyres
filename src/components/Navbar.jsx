@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Disc, Menu, X, User } from "lucide-react";
+import { Phone, Menu, X, User } from "lucide-react";
 
 export default function Navbar({
   onOpenSearch,
@@ -27,12 +27,14 @@ export default function Navbar({
     setMobileMenuOpen(false);
     if (target === "home") {
       onNavigateHome();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }, 50);
     } else if (target === "tyres" || target === "catalog") {
       onNavigateCatalog();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     } else {
-      // If currently on catalog or product-detail, first go home then scroll
       if (currentPage !== "home") {
         onNavigateHome();
         setTimeout(() => {
@@ -56,13 +58,9 @@ export default function Navbar({
           right: 0,
           zIndex: 900,
           transition: "var(--transition-smooth)",
-          background: scrolled ? "rgba(8, 10, 14, 0.95)" : "rgba(8, 10, 14, 0.8)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          borderBottom: scrolled
-            ? "1px solid rgba(255, 255, 255, 0.15)"
-            : "1px solid rgba(255, 255, 255, 0.06)",
-          boxShadow: scrolled ? "0 10px 30px rgba(0, 0, 0, 0.6)" : "none",
+          background: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
+          boxShadow: scrolled ? "0 8px 25px rgba(15, 23, 42, 0.08)" : "0 2px 10px rgba(15, 23, 42, 0.03)",
         }}
       >
         <div
@@ -71,37 +69,51 @@ export default function Navbar({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "80px",
+            height: "70px",
           }}
         >
           {/* Logo */}
           <div
             onClick={() => handleNav("home")}
+            role="button"
+            tabIndex={0}
+            aria-label="Sadguru Tyres - Back to Top of Home"
+            title="Sadguru Tyres - Home"
             style={{
               display: "flex",
               alignItems: "center",
               gap: "12px",
               cursor: "pointer",
+              transition: "transform 0.2s ease, opacity 0.2s ease",
+              userSelect: "none",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.88";
+              e.currentTarget.style.transform = "scale(1.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.transform = "scale(1)";
             }}
           >
             <div
               style={{
-                width: "44px",
-                height: "44px",
+                width: "46px",
+                height: "46px",
                 borderRadius: "50%",
-                background: "#ffffff",
+                background: "#0f172a",
                 padding: "3px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 0 15px rgba(255, 42, 42, 0.4)",
+                boxShadow: "0 0 12px rgba(239, 68, 68, 0.3)",
                 overflow: "hidden",
                 flexShrink: 0,
               }}
             >
               <img
                 src="/images/sgt_logo.png"
-                alt="Sadguru Tyres SGT Logo"
+                alt="Sadguru Tyres Logo"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -114,28 +126,28 @@ export default function Navbar({
               <div
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: "1.35rem",
+                  fontSize: "1.3rem",
                   fontWeight: "800",
-                  letterSpacing: "0.08em",
-                  color: "#dad8d3ff",
+                  letterSpacing: "0.05em",
+                  color: "#0f172a",
                   lineHeight: 1.1,
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
                 }}
               >
-                SADGURU <span style={{ color: "#ff2a2a", textShadow: "0 0 12px rgba(255, 42, 42, 0.4)" }}>TYRES</span>
+                SADGURU <span style={{ color: "#ef4444" }}>TYRES</span>
               </div>
               <div
                 style={{
-                  fontSize: "0.62rem",
-                  letterSpacing: "0.18em",
-                  color: "var(--text-dim)",
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.16em",
+                  color: "#64748b",
                   textTransform: "uppercase",
                   fontWeight: "600",
                 }}
               >
-                PRECISION • PERFORMANCE • SAFETY
+                TOUGH • PERFORMANCE • TRUST
               </div>
             </div>
           </div>
@@ -145,150 +157,123 @@ export default function Navbar({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "26px",
+              gap: "24px",
             }}
             className="desktop-nav"
           >
-            <button
-              onClick={() => handleNav("home")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: currentPage === "home" ? "700" : "500",
-                color: currentPage === "home" ? "#ffffff" : "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              Home
-            </button>
+            {[
+              { id: "home", label: "Home" },
+              { id: "catalog", label: "Products" },
+              { id: "services", label: "Services" },
+              { id: "about", label: "About Us" },
+              { id: "contact", label: "Contact" },
+            ].map((nav) => {
+              const isActive =
+                (nav.id === "home" && currentPage === "home") ||
+                (nav.id === "catalog" && currentPage === "catalog");
 
-            <button
-              onClick={() => handleNav("tyres")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: currentPage === "catalog" ? "700" : "500",
-                color: currentPage === "catalog" ? "#ffffff" : "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              Tyres
-            </button>
-
-            <button
-              onClick={() => handleNav("tyres")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: "500",
-                color: "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              Products
-            </button>
-
-            <button
-              onClick={() => handleNav("services")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: "500",
-                color: "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              Services
-            </button>
-
-            <button
-              onClick={() => handleNav("about")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: "500",
-                color: "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              About Us
-            </button>
-
-            <button
-              onClick={() => handleNav("contact")}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "0.92rem",
-                fontWeight: "500",
-                color: "var(--text-silver)",
-                cursor: "pointer",
-                padding: "6px 0",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              Contact
-            </button>
+              return (
+                <button
+                  key={nav.id}
+                  onClick={() => handleNav(nav.id)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    outline: "none",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    caretColor: "transparent",
+                    fontSize: "0.92rem",
+                    fontWeight: isActive ? "600" : "500",
+                    color: isActive ? "#ef4444" : "#334155",
+                    cursor: "pointer",
+                    padding: "6px 2px",
+                    position: "relative",
+                    transition: "var(--transition-smooth)",
+                  }}
+                >
+                  {nav.label}
+                  {isActive && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "-4px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "14px",
+                        height: "3px",
+                        background: "#ef4444",
+                        borderRadius: "999px",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* Right Action Container: Premium Log In Button */}
+          {/* Right Action Container */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "14px",
+              gap: "12px",
             }}
           >
+            {/* Phone Button Pill matching reference design */}
+            <a
+              href="tel:1800151100"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "999px",
+                fontSize: "0.85rem",
+                fontWeight: "700",
+                background: "#0f172a",
+                color: "#ffffff",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.2)",
+                transition: "var(--transition-smooth)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#1e293b";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#0f172a";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              <Phone size={14} fill="#ffffff" color="#ffffff" />
+              <span>1800 15 11 00</span>
+            </a>
+
+            {/* Log In Button */}
             <button
               onClick={onOpenLogin}
               className="desktop-cta"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "10px 22px",
+                gap: "6px",
+                padding: "9px 18px",
                 borderRadius: "999px",
                 fontSize: "0.85rem",
-                fontWeight: "700",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                background: "rgba(255, 255, 255, 0.07)",
-                border: "1px solid rgba(255, 255, 255, 0.22)",
-                color: "#ffffff",
+                fontWeight: "500",
+                background: "#f1f5f9",
+                border: "1px solid #cbd5e1",
+                color: "#0f172a",
                 cursor: "pointer",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                transition: "var(--transition-smooth)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#ffffff";
-                e.currentTarget.style.color = "#07080b";
-                e.currentTarget.style.borderColor = "#ffffff";
-                e.currentTarget.style.boxShadow = "0 6px 25px rgba(255, 255, 255, 0.35)";
-                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.background = "#e2e8f0";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.07)";
-                e.currentTarget.style.color = "#ffffff";
-                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.22)";
-                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.4)";
-                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.background = "#f1f5f9";
               }}
             >
               <User size={15} />
@@ -302,7 +287,7 @@ export default function Navbar({
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#ffffff",
+                color: "#0f172a",
                 display: "none",
                 padding: "6px",
                 cursor: "pointer",
@@ -320,60 +305,41 @@ export default function Navbar({
         <div
           style={{
             position: "fixed",
-            top: "80px",
+            top: "62px",
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(7, 8, 11, 0.98)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
+            background: "#ffffff",
             zIndex: 890,
-            padding: "32px 24px",
+            padding: "24px 20px",
             display: "flex",
             flexDirection: "column",
-            gap: "18px",
-            borderTop: "1px solid rgba(255, 42, 42, 0.2)",
-            animation: "fadeIn 0.25s ease-out",
+            gap: "14px",
+            borderTop: "1px solid #e2e8f0",
+            boxShadow: "0 20px 40px rgba(15, 23, 42, 0.15)",
           }}
         >
-          <button
-            onClick={() => handleNav("home")}
-            style={{
-              background: "none",
-              border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "#ffffff",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-            }}
-          >
-            Home
-          </button>
-
-          <button
-            onClick={() => handleNav("tyres")}
-            style={{
-              background: "none",
-              border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "var(--accent-crimson)",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>Explore All Tyres</span>
-            <span>→</span>
-          </button>
+          {["home", "catalog", "services", "about", "contact"].map((navId) => (
+            <button
+              key={navId}
+              onClick={() => handleNav(navId)}
+              style={{
+                background: "none",
+                border: "none",
+                fontFamily: "var(--font-body)",
+                fontSize: "1.1rem",
+                fontWeight: "500",
+                color: navId === "catalog" ? "#ef4444" : "#0f172a",
+                textAlign: "left",
+                padding: "10px 0",
+                borderBottom: "1px solid #f1f5f9",
+                cursor: "pointer",
+                textTransform: "capitalize",
+              }}
+            >
+              {navId === "catalog" ? "Explore Products →" : navId}
+            </button>
+          ))}
 
           <button
             onClick={() => {
@@ -381,79 +347,24 @@ export default function Navbar({
               onOpenLogin();
             }}
             style={{
-              background: "none",
+              background: "#0f172a",
               border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
+              borderRadius: "999px",
+              fontSize: "1rem",
+              fontWeight: "500",
               color: "#ffffff",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+              padding: "12px",
+              marginTop: "10px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              justifyContent: "center",
+              gap: "8px",
             }}
           >
-            <User size={20} />
+            <User size={18} />
             <span>Log In</span>
           </button>
-
-          <button
-            onClick={() => handleNav("services")}
-            style={{
-              background: "none",
-              border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "#ffffff",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-            }}
-          >
-            Services
-          </button>
-
-          <button
-            onClick={() => handleNav("about")}
-            style={{
-              background: "none",
-              border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "#ffffff",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-            }}
-          >
-            About Us
-          </button>
-
-          <button
-            onClick={() => handleNav("contact")}
-            style={{
-              background: "none",
-              border: "none",
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "#ffffff",
-              textAlign: "left",
-              padding: "10px 0",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-            }}
-          >
-            Contact
-          </button>
-
         </div>
       )}
 

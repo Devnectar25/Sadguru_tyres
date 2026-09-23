@@ -5,45 +5,93 @@ export default function WhyChooseUs() {
   const features = [
     {
       id: "tech",
+      num: "01",
       icon: Cpu,
       title: "Advanced Technology",
-      stat: "4th Gen Silica",
+      stat: "Factory Tested | Industry Proven",
       desc: "Nano-engineered silica polymers form molecular bonds with asphalt, dynamically adapting flexibility under shifting ambient temperatures.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
     {
       id: "grip",
+      num: "02",
       icon: Disc3,
       title: "Superior Wet Grip",
-      stat: "Class A Rated",
+      stat: "Safety First | Unmatched Stability",
       desc: "Four wide longitudinal hydro-channels evacuate up to 34 liters of water per second at 100 km/h, preventing aquaplaning entirely.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
     {
       id: "life",
+      num: "03",
       icon: Timer,
       title: "Extended Tread Life",
-      stat: "80,000+ KM",
+      stat: "Longer Life | Better Value",
       desc: "Even-pressure footprint distribution prevents irregular shoulder wear, extending usable tread depth across multi-season driving.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
     {
       id: "safety",
+      num: "04",
       icon: ShieldCheck,
       title: "Maximum Road Safety",
-      stat: "Dual Steel Belts",
+      stat: "Reliable | Certified Standards",
       desc: "Reinforced Kevlar sidewalls and dual high-tensile steel belts resist severe pothole punctures, curb pinches, and impact shocks.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
     {
       id: "performance",
+      num: "05",
       icon: Zap,
       title: "Precision Performance",
-      stat: "1.18G Lateral",
+      stat: "Engineered for Excellence",
       desc: "Stiff outer shoulder blocks deliver razor-sharp turn-in steering response and track-day stability under high-speed cornering forces.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
     {
       id: "quality",
+      num: "06",
       icon: Award,
       title: "Certified Indian Quality",
-      stat: "BIS / ISI & ISO",
+      stat: "Trusted | Quality Assured",
       desc: "Over 2.5 million kilometers of extreme endurance torture testing logged across Indian highway terrains and climate conditions.",
+      accent: "#ef4444",
+      bgLight: "#fef2f2",
+      borderLight: "#fecaca",
+      pillBg: "#fff5f5",
+      pillBorder: "#fee2e2",
+      pillText: "#dc2626",
+      glow: "rgba(239, 68, 68, 0.14)",
     },
   ];
 
@@ -51,26 +99,26 @@ export default function WhyChooseUs() {
     <section
       id="why-choose-us"
       style={{
-        padding: "20px 0 25px 0",
+        padding: "48px 0",
         position: "relative",
-        background: "linear-gradient(180deg, #07080b 0%, #0d1017 100%)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+        background: "#ffffff",
+        borderTop: "1px solid #e2e8f0",
+        borderBottom: "1px solid #e2e8f0",
       }}
     >
       <div className="container">
         {/* Header */}
-        <div className="section-header animate-text-coming">
+        <div className="section-header" style={{ marginBottom: "40px" }}>
           <div className="section-eyebrow">
-            <ShieldCheck size={16} />
-            ENGINEERED WITHOUT COMPROMISE
+            WHY CHOOSE US
           </div>
-          <h2 className="animate-text-coming animate-delay-1">Why Drivers Choose Sadguru Tyres</h2>
-          <p className="animate-text-coming animate-delay-2">
-            From motorsport track days to luxury trans-continental touring, our tyres are benchmarked against the toughest standards in the automotive industry.
+          <h2>Why Drivers Choose Sadguru Tyres</h2>
+          <p>
+            From motorsport roads to everyday commutes, our tyres are built for performance, safety, and long-lasting value — because you deserve the best.
           </p>
         </div>
 
-        {/* Feature Cards Grid (6 cards - Unified Platinum Silver / Titanium Palette) */}
+        {/* Feature Cards Grid */}
         <div
           style={{
             display: "grid",
@@ -83,82 +131,75 @@ export default function WhyChooseUs() {
             return (
               <div
                 key={item.id}
-                className="glass-card"
                 style={{
-                  padding: "36px 30px",
-                  borderRadius: "18px",
+                  padding: "32px 28px",
+                  borderRadius: "20px",
                   display: "flex",
                   flexDirection: "column",
                   position: "relative",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderTop: `3.5px solid ${item.accent}`,
+                  boxShadow: "0 6px 20px rgba(15, 23, 42, 0.04)",
+                  transition: "var(--transition-smooth)",
                   overflow: "hidden",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.borderColor = item.borderLight;
+                  e.currentTarget.style.borderTopColor = item.accent;
+                  e.currentTarget.style.boxShadow = `0 18px 36px ${item.glow}`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.borderTopColor = item.accent;
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(15, 23, 42, 0.04)";
                 }}
               >
-                {/* Unified Platinum Silver Glow Accent Corner */}
+                {/* Top Corner Watermark Number */}
                 <div
                   style={{
                     position: "absolute",
-                    top: "-30px",
-                    right: "-30px",
-                    width: "120px",
-                    height: "120px",
-                    borderRadius: "50%",
-                    background: "rgba(255, 255, 255, 0.12)",
-                    opacity: 0.25,
-                    filter: "blur(30px)",
-                    pointerEvents: "none",
-                  }}
-                />
-
-                {/* Icon & Stat Pill */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "24px",
+                    top: "22px",
+                    right: "26px",
+                    fontSize: "1.25rem",
+                    fontWeight: "900",
+                    color: item.accent,
+                    opacity: 0.22,
+                    letterSpacing: "-0.03em",
+                    userSelect: "none",
                   }}
                 >
-                  <div
-                    style={{
-                      width: "52px",
-                      height: "52px",
-                      borderRadius: "12px",
-                      background: "rgba(255, 255, 255, 0.06)",
-                      border: "1px solid rgba(255, 255, 255, 0.16)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ffffff",
-                      boxShadow: "0 4px 15px rgba(0, 0, 0, 0.4)",
-                    }}
-                  >
-                    <Icon size={26} color="#ffffff" />
-                  </div>
+                  {item.num}
+                </div>
 
-                  <span
-                    style={{
-                      fontSize: "0.78rem",
-                      fontWeight: "700",
-                      padding: "5px 14px",
-                      borderRadius: "999px",
-                      background: "rgba(255, 255, 255, 0.06)",
-                      border: "1px solid rgba(255, 255, 255, 0.14)",
-                      color: "#f1f5f9",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {item.stat}
-                  </span>
+                {/* Icon Container */}
+                <div
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "14px",
+                    background: item.bgLight,
+                    border: `1px solid ${item.borderLight}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: item.accent,
+                    marginBottom: "22px",
+                    boxShadow: `0 4px 12px ${item.glow}`,
+                  }}
+                >
+                  <Icon size={26} strokeWidth={2.2} />
                 </div>
 
                 {/* Title */}
                 <h3
                   style={{
-                    fontSize: "1.3rem",
-                    marginBottom: "12px",
-                    color: "#ffffff",
-                    fontWeight: "700",
+                    fontSize: "1.25rem",
+                    marginBottom: "10px",
+                    color: "#0f172a",
+                    fontWeight: "800",
                   }}
                 >
                   {item.title}
@@ -168,30 +209,39 @@ export default function WhyChooseUs() {
                 <p
                   style={{
                     fontSize: "0.92rem",
-                    color: "var(--text-dim)",
-                    lineHeight: 1.6,
-                    marginBottom: "20px",
+                    color: "#64748b",
+                    lineHeight: 1.62,
+                    marginBottom: "24px",
                   }}
                 >
                   {item.desc}
                 </p>
 
-                {/* Footer Checkmark */}
+                {/* Stat Pill Footer */}
                 <div
                   style={{
                     marginTop: "auto",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "0.78rem",
-                    fontWeight: "600",
-                    color: "var(--text-silver)",
-                    paddingTop: "14px",
-                    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                    paddingTop: "16px",
+                    borderTop: "1px solid #f1f5f9",
                   }}
                 >
-                  <CheckCircle size={15} color="#e2e8f0" />
-                  Factory Standard Testing Passed
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "7px 14px",
+                      borderRadius: "10px",
+                      background: item.pillBg,
+                      border: `1px solid ${item.pillBorder}`,
+                      fontSize: "0.82rem",
+                      fontWeight: "700",
+                      color: item.pillText,
+                    }}
+                  >
+                    <CheckCircle size={15} color={item.accent} strokeWidth={2.4} />
+                    <span>{item.stat}</span>
+                  </div>
                 </div>
               </div>
             );

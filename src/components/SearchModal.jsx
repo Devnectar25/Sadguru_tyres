@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { TYRES_DATA } from "../data/tyresData";
-import { Search, X, ChevronRight, Disc, ArrowRight } from "lucide-react";
+import { Search, X, ChevronRight } from "lucide-react";
 
 export default function SearchModal({ onClose, onSelectTyre, currency }) {
   const [query, setQuery] = useState("");
@@ -31,6 +31,9 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
         style={{
           maxWidth: "650px",
           padding: "24px",
+          background: "#ffffff",
+          borderRadius: "24px",
+          color: "#0f172a",
         }}
       >
         {/* Search Input Header */}
@@ -40,14 +43,14 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
             alignItems: "center",
             gap: "12px",
             paddingBottom: "18px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            borderBottom: "1px solid #e2e8f0",
           }}
         >
-          <Search size={22} color="var(--accent-crimson)" />
+          <Search size={22} color="#ef4444" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search by tyre name, size (e.g. 245/40 R19) or car (BMW, Tesla, Porsche)..."
+            placeholder="Search by tyre name, size (e.g. 245/40 R19) or car..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
@@ -55,17 +58,17 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
               background: "transparent",
               border: "none",
               outline: "none",
-              color: "#ffffff",
+              color: "#0f172a",
               fontSize: "1.1rem",
-              fontFamily: "inherit",
+              fontWeight: "600",
             }}
           />
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255, 255, 255, 0.08)",
-              border: "none",
-              color: "var(--text-muted)",
+              background: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              color: "#0f172a",
               width: "32px",
               height: "32px",
               borderRadius: "50%",
@@ -91,7 +94,7 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
           }}
         >
           {results.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-muted)" }}>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
               No tyres matching "{query}". Try searching for "Sport", "EV", "R19", or "Touring".
             </div>
           ) : (
@@ -111,19 +114,21 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
                     alignItems: "center",
                     gap: "16px",
                     padding: "12px 16px",
-                    borderRadius: "12px",
-                    background: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                    borderRadius: "14px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 42, 42, 0.08)";
-                    e.currentTarget.style.borderColor = "rgba(255, 42, 42, 0.3)";
+                    e.currentTarget.style.background = "#ffffff";
+                    e.currentTarget.style.borderColor = "#ef4444";
+                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 68, 68, 0.15)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                    e.currentTarget.style.background = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
                   <img
@@ -134,24 +139,33 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
 
                   <div style={{ flexGrow: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontWeight: "700", color: "#ffffff", fontSize: "0.98rem" }}>
+                      <span style={{ fontWeight: "800", color: "#0f172a", fontSize: "0.98rem" }}>
                         {tyre.name}
                       </span>
-                      <span className="badge-pill" style={{ fontSize: "0.68rem", padding: "2px 8px" }}>
+                      <span
+                        style={{
+                          background: "#0f172a",
+                          color: "#ffffff",
+                          fontSize: "0.68rem",
+                          fontWeight: "700",
+                          padding: "2px 8px",
+                          borderRadius: "9999px",
+                        }}
+                      >
                         {tyre.badge}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "2px" }}>
-                      {tyre.category} • Speed {tyre.specs.speedRating} • Wet Grip {tyre.specs.wetGrip}
+                    <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "2px" }}>
+                      {tyre.category} • Speed {tyre.specs.speedRating}
                     </div>
                   </div>
 
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontWeight: "800", color: "#ffffff", fontSize: "1.1rem" }}>
+                    <div style={{ fontWeight: "800", color: "#0f172a", fontSize: "1.1rem" }}>
                       {displayPrice}
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--accent-crimson)", display: "flex", alignItems: "center", gap: "2px", justifyContent: "flex-end" }}>
+                    <div style={{ fontSize: "0.72rem", color: "#ef4444", fontWeight: "700", display: "flex", alignItems: "center", gap: "2px", justifyContent: "flex-end" }}>
                       View <ChevronRight size={12} />
                     </div>
                   </div>
@@ -166,9 +180,9 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
           style={{
             paddingTop: "14px",
             marginTop: "14px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+            borderTop: "1px solid #e2e8f0",
             fontSize: "0.75rem",
-            color: "var(--text-muted)",
+            color: "#64748b",
             display: "flex",
             justifyContent: "space-between",
           }}

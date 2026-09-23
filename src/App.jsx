@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import TyreFinder from "./components/TyreFinder";
 import FeaturedProducts from "./components/FeaturedProducts";
 import WhyChooseUs from "./components/WhyChooseUs";
-import PerformanceSection from "./components/PerformanceSection";
 import ServicesSection from "./components/ServicesSection";
 import AboutBrand from "./components/AboutBrand";
 import Testimonials from "./components/Testimonials";
@@ -85,7 +83,10 @@ export default function App() {
 
   const handleGoToHome = () => {
     setCurrentPage("home");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }, 50);
   };
 
   const scrollToSection = (sectionId) => {
@@ -131,16 +132,6 @@ export default function App() {
             <BrandSection />
           </SectionReveal>
 
-          {/* 3. Tyre Finder Section */}
-          <SectionReveal>
-            <TyreFinder
-              onFilterApply={(filters) => {
-                showToast(`Fitment matched: ${filters.size} for ${filters.model}`);
-                handleGoToCatalog();
-              }}
-            />
-          </SectionReveal>
-
           {/* 4. Featured Products */}
           <SectionReveal>
             <FeaturedProducts
@@ -152,11 +143,6 @@ export default function App() {
           {/* 5. Why Choose Us */}
           <SectionReveal>
             <WhyChooseUs />
-          </SectionReveal>
-
-          {/* 6. Performance Telemetry & Weather Simulator */}
-          <SectionReveal>
-            <PerformanceSection />
           </SectionReveal>
 
           {/* 7. Specialized Services */}
@@ -215,7 +201,10 @@ export default function App() {
       )}
 
       {/* 11. Global Footer */}
-      <Footer onOpenFinder={() => scrollToSection("finder")} />
+      <Footer
+        onOpenFinder={() => scrollToSection("finder")}
+        onNavigateHome={handleGoToHome}
+      />
 
       {/* Global Interactive Modals */}
       {quickDetailModalTyre && (

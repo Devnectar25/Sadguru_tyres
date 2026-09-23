@@ -1,54 +1,27 @@
-import React, { useState, useRef } from "react";
-import { ChevronRight, Settings, ShieldCheck, Gauge, Award, Sparkles, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import React from "react";
+import { ArrowRight, Settings, Users, Store, Globe2 } from "lucide-react";
 
 export default function Hero({ onExploreClick, onFinderClick, onServicesClick }) {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef(null);
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   return (
     <section
       id="hero"
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "78vh",
+        minHeight: "540px",
         display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        padding: "20px 0 45px 0",
+        alignItems: "center",
+        padding: "34px 0 50px 0",
+        scrollMarginTop: "90px",
         overflow: "hidden",
-        background: "#14110d",
+        background: "#0f172a",
         textAlign: "left",
       }}
     >
-      {/* 1. FULL-BLEED RACING CAR BACKGROUND VIDEO */}
-      <video
-        ref={videoRef}
-        src="/videos/hero_3d_tyre.mp4"
-        poster="/images/tyre_tread_macro.jpg"
-        autoPlay
-        loop
-        muted={isMuted}
-        playsInline
+      {/* Background Scenic Image - Edge-to-Edge Free on Left and Right */}
+      <img
+        src="/images/hero_scenic_bg.png"
+        alt="Scenic Highway & Performance Tyres"
         style={{
           position: "absolute",
           top: 0,
@@ -56,81 +29,80 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
           width: "100%",
           height: "100%",
           objectFit: "cover",
+          objectPosition: "center right",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Soft Clear Gradient Overlay (No blur) */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "linear-gradient(to right, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0.1) 100%)",
           zIndex: 1,
-          filter: "brightness(0.68) contrast(1.1) saturate(1.15) sepia(0.08)",
-        }}
-      />
-
-      {/* 2. DARK LUXURY VIGNETTE OVERLAY */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 2,
-          background: `
-            linear-gradient(to bottom, rgba(20, 17, 13, 0.55) 0%, rgba(20, 17, 13, 0.25) 40%, rgba(20, 17, 13, 0.88) 100%),
-            linear-gradient(to right, rgba(20, 17, 13, 0.75) 0%, rgba(20, 17, 13, 0.3) 55%, rgba(20, 17, 13, 0.65) 100%)
-          `,
           pointerEvents: "none",
         }}
       />
 
-      {/* 3. SPEED GRID TEXTURE OVERLAY */}
+      {/* HERO CONTENT LAYER */}
       <div
+        className="container"
         style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 3,
-          backgroundImage: `
-            linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-          pointerEvents: "none",
-          opacity: 0.35,
+          position: "relative",
+          zIndex: 10,
+          width: "100%",
         }}
-      />
+      >
+        <div style={{ maxWidth: "760px" }}>
+          {/* Eyebrow Badge */}
+          <div
+            className="animate-fade-in-up"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 18px",
+              borderRadius: "999px",
+              background: "#000000",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: "#ffffff",
+              fontSize: "0.82rem",
+              fontWeight: "700",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: "16px",
+              boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
+            }}
+          >
+            <span>PREMIUM TYRES FOR A SMOOTHER TOMORROW</span>
+          </div>
 
-      {/* 4. HERO CONTENT LAYER (20PX TOP GAP BELOW NAVBAR) */}
-      <div className="container" style={{ position: "relative", zIndex: 10, width: "100%", paddingTop: "0px", marginTop: "0px" }}>
-        <div
-          style={{
-            maxWidth: "780px",
-            textAlign: "left",
-            marginLeft: 0,
-            paddingTop: "0px",
-            marginTop: "0px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-          }}
-        >
           {/* Main Headline */}
           <h1
             className="animate-fade-in-up"
             style={{
-              fontSize: "clamp(2.6rem, 5.5vw, 4.8rem)",
-              lineHeight: 1.05,
-              marginBottom: "20px",
-              letterSpacing: "-0.03em",
-              color: "#ffffff",
-              textAlign: "left",
-              textShadow: "0 10px 30px rgba(0,0,0,0.9)",
+              fontSize: "clamp(2.4rem, 4.2vw, 3.6rem)",
+              lineHeight: 1.12,
+              marginBottom: "16px",
+              letterSpacing: "-0.02em",
+              color: "#0f172a",
+              fontWeight: "800",
               userSelect: "none",
               WebkitUserSelect: "none",
               caretColor: "transparent",
-              outline: "none",
             }}
           >
             Engineered for <br />
             <span
               style={{
-                background: "linear-gradient(180deg, #f7f1e7 30%, #d9822f 100%)",
+                color: "#ef4444",
+                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
-                userSelect: "none",
-                WebkitUserSelect: "none",
-                caretColor: "transparent",
               }}
             >
               Every Journey.
@@ -139,29 +111,27 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
 
           {/* Supporting Copy */}
           <p
-            className="animate-fade-in-up animate-delay-1"
+            className="animate-fade-in-up"
             style={{
-              fontSize: "clamp(1.05rem, 1.3vw, 1.25rem)",
-              color: "rgba(241, 245, 249, 0.9)",
+              fontSize: "1.08rem",
+              color: "#334155",
               lineHeight: 1.6,
               marginBottom: "32px",
-              maxWidth: "620px",
-              textAlign: "left",
-              textShadow: "0 4px 15px rgba(0,0,0,0.9)",
+              maxWidth: "600px",
+              fontWeight: "500",
             }}
           >
-            Uncompromising grip, whisper-quiet cruising, and track-proven durability. Experience next-generation silica compounds forged for high-performance sports cars, luxury SUVs, and daily driving.
+            Uncompromising grip, superior quiet riding and made for proven durability — for safer roads, longer life and a smoother ride, every time.
           </p>
 
           {/* Action CTAs */}
           <div
-            className="animate-fade-in-up animate-delay-2"
+            className="animate-fade-in-up"
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: "18px",
-              marginBottom: "44px",
-              justifyContent: "flex-start",
+              gap: "16px",
+              marginBottom: "40px",
             }}
           >
             <button
@@ -171,194 +141,158 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "10px",
-                padding: "15px 36px",
-                borderRadius: "8px",
+                padding: "16px 36px",
+                borderRadius: "999px",
                 fontWeight: "700",
-                fontSize: "0.96rem",
-                letterSpacing: "0.04em",
+                fontSize: "0.98rem",
+                letterSpacing: "0.02em",
                 textTransform: "uppercase",
                 cursor: "pointer",
                 transition: "var(--transition-smooth)",
                 border: "none",
-                background: "linear-gradient(135deg, #eba763, #cf7a30)",
-                color: "#1c1712",
-                boxShadow: "0 10px 25px rgba(217, 130, 47, 0.25)",
+                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                color: "#ffffff",
+                boxShadow: "0 8px 25px rgba(239, 68, 68, 0.35)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 14px 30px rgba(217, 130, 47, 0.4)";
+                e.currentTarget.style.boxShadow = "0 12px 30px rgba(239, 68, 68, 0.45)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 10px 25px rgba(217, 130, 47, 0.25)";
+                e.currentTarget.style.boxShadow = "0 8px 25px rgba(239, 68, 68, 0.35)";
               }}
             >
-              Explore Tyres
-              <ChevronRight size={18} color="#1c1712" />
+              EXPLORE TYRES
+              <ArrowRight size={18} />
             </button>
 
             <button
               onClick={onServicesClick || onFinderClick}
-              className="btn btn-secondary"
               style={{
-                padding: "15px 32px",
-                fontSize: "0.96rem",
-                background: "rgba(10, 14, 22, 0.75)",
-                borderColor: "rgba(255, 255, 255, 0.2)",
-                color: "#ffffff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                padding: "16px 32px",
+                borderRadius: "999px",
+                fontWeight: "700",
+                fontSize: "0.98rem",
+                letterSpacing: "0.02em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "var(--transition-smooth)",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                color: "#0f172a",
+                boxShadow: "0 2px 10px rgba(15, 23, 42, 0.05)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.borderColor = "#0f172a";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.borderColor = "#cbd5e1";
+                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               <Settings size={18} />
-              View Services
+              VIEW SERVICES
             </button>
           </div>
 
-          {/* Hero Telemetry Quick Strip */}
+          {/* Hero Statistics Badges Strip */}
           <div
-            className="animate-fade-in-up animate-delay-3"
+            className="animate-fade-in-up"
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: "28px",
-              paddingTop: "24px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-              justifyContent: "flex-start",
+              gap: "20px",
+              alignItems: "center",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.08)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#ffffff",
-                }}
-              >
-                <ShieldCheck size={20} />
-              </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "#ffffff",
+                padding: "14px 24px",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 15px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <Users size={24} color="#ef4444" />
               <div>
-                <div style={{ fontWeight: "700", fontSize: "0.95rem", color: "#fff" }}>
-                  80,000 KM
+                <div style={{ fontWeight: "800", fontSize: "1.15rem", color: "#0f172a", lineHeight: 1.1 }}>
+                  85,000+
                 </div>
-                <div style={{ fontSize: "0.74rem", color: "var(--text-dim)" }}>
-                  Treadwear Warranty
+                <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600" }}>
+                  Happy Customers
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.08)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--accent-cyan)",
-                }}
-              >
-                <Gauge size={20} />
-              </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "#ffffff",
+                padding: "14px 24px",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 15px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <Store size={24} color="#0f172a" />
               <div>
-                <div style={{ fontWeight: "700", fontSize: "0.95rem", color: "#fff" }}>
-                  -15% Shorter
+                <div style={{ fontWeight: "800", fontSize: "1.15rem", color: "#0f172a", lineHeight: 1.1 }}>
+                  +125 Dealers
                 </div>
-                <div style={{ fontSize: "0.74rem", color: "var(--text-dim)" }}>
-                  Wet Braking Distance
+                <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600" }}>
+                  Across India
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.08)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--accent-amber)",
-                }}
-              >
-                <Award size={20} />
-              </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "#ffffff",
+                padding: "14px 24px",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 15px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <Globe2 size={24} color="#0f172a" />
               <div>
-                <div style={{ fontWeight: "700", fontSize: "0.95rem", color: "#fff" }}>
-                  BIS / ISI
+                <div style={{ fontWeight: "800", fontSize: "1.15rem", color: "#0f172a", lineHeight: 1.1 }}>
+                  85+
                 </div>
-                <div style={{ fontSize: "0.74rem", color: "var(--text-dim)" }}>
-                  Indian Certified
+                <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600" }}>
+                  Global Brands
                 </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* 5. FLOATING VIDEO CONTROL BUTTONS (Bottom Right - Titanium Glass) */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "24px",
-          right: "28px",
-          zIndex: 20,
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          background: "rgba(10, 14, 22, 0.85)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: "999px",
-          padding: "8px 14px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.8)",
-        }}
-      >
-        <button
-          onClick={togglePlay}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-silver)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            padding: 0,
-            transition: "color 0.2s",
-          }}
-          title={isPlaying ? "Pause 3D Video" : "Play 3D Video"}
-        >
-          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-        </button>
-
-        <button
-          onClick={toggleMute}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-silver)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            padding: 0,
-            transition: "color 0.2s",
-          }}
-          title={isMuted ? "Unmute Audio" : "Mute Audio"}
-        >
-          {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-        </button>
-      </div>
+      <style>{`
+        @media (max-width: 960px) {
+          #hero {
+            padding: 30px 0 40px 0 !important;
+            min-height: auto !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

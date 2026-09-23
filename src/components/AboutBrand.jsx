@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Award, Flag, ChevronRight, CheckCircle2, History } from "lucide-react";
+import { ShieldCheck, Award, ChevronRight, CheckCircle2, History } from "lucide-react";
 
 export default function AboutBrand({ onExploreClick }) {
   return (
@@ -91,7 +91,6 @@ export default function AboutBrand({ onExploreClick }) {
           {/* Right Column: Narrative Story & Key Pillars */}
           <div>
             <div className="section-eyebrow" style={{ marginBottom: "16px" }}>
-              <Flag size={16} />
               THE SADGURU HERITAGE
             </div>
 

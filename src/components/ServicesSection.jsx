@@ -1,193 +1,274 @@
 import React from "react";
 import { SERVICES_DATA } from "../data/servicesData";
-import { Wrench, Disc, Check, Clock, Calendar, ShieldAlert, ArrowRight } from "lucide-react";
+import { Check, Cpu, ArrowRight } from "lucide-react";
 
 export default function ServicesSection({ onBookService }) {
+
   return (
     <section
       id="services"
       style={{
-        padding: "20px 0 50px 0",
+        padding: "30px 0",
         position: "relative",
-        background: "var(--bg-dark)",
+        background: "#f8fafc",
       }}
     >
       <div className="container">
         {/* Section Header */}
-        <div className="section-header animate-text-coming" style={{ marginBottom: "32px" }}>
+        <div className="section-header" style={{ marginBottom: "26px" }}>
           <div className="section-eyebrow">
-            <Wrench size={16} />
-            EXPERT AUTOMOTIVE CARE & INSTALLATION
+            24/7 SUPPORT & INSTALLATION
           </div>
-          <h2 className="animate-text-coming animate-delay-1">Specialized Tyre & Wheel Services</h2>
-          <p className="animate-text-coming animate-delay-2">
-            Equipped with 3D laser alignment and touchless robotic demounters to protect your premium forged alloy wheels.
+          <h2>Specialized Tyre & Wheel Services</h2>
+          <p>
+            Equipped with 3D laser alignment and modern touchless tools to deliver premium service for your vehicle.
           </p>
         </div>
 
-        {/* Services Grid (Showing 3 Core Services) */}
+        {/* Services Grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "28px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "24px",
           }}
         >
-          {SERVICES_DATA.slice(0, 3).map((service, index) => (
-            <div
-              key={service.id}
-              className="glass-card"
-              style={{
-                padding: "32px",
-                borderRadius: "18px",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
-                background: "rgba(13, 17, 24, 0.8)",
-              }}
-            >
-              {/* Header Badge */}
+          {SERVICES_DATA.slice(0, 3).map((service) => {
+            return (
               <div
+                key={service.id}
+                className="service-card"
                 style={{
+                  padding: "22px 22px 18px",
+                  borderRadius: "20px",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "20px",
+                  flexDirection: "column",
+                  position: "relative",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  boxShadow: "0 6px 20px rgba(15, 23, 42, 0.05)",
+                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                  overflow: "hidden",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.borderColor = "#f87171";
+                  e.currentTarget.style.boxShadow =
+                    "0 16px 36px rgba(239, 68, 68, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.borderColor = "#cbd5e1";
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(15, 23, 42, 0.05)";
                 }}
               >
-                <span
+                {/* Top Subtle Red Accent Line */}
+                <div
                   style={{
-                    fontSize: "0.74rem",
-                    fontWeight: "700",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    background: "rgba(255, 42, 42, 0.12)",
-                    color: "var(--accent-crimson-light)",
-                    border: "1px solid rgba(255, 42, 42, 0.25)",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "3px",
+                    background: "linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #f87171 100%)",
                   }}
-                >
-                  {service.badge}
-                </span>
+                />
 
+                {/* Top Row: Vibrant Red Badge + Duration */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    fontSize: "0.78rem",
-                    color: "var(--text-muted)",
+                    justifyContent: "space-between",
+                    marginBottom: "14px",
                   }}
                 >
-                  <Clock size={14} />
-                  {service.duration}
-                </div>
-              </div>
-
-              {/* Title & Description */}
-              <h3
-                style={{
-                  fontSize: "1.35rem",
-                  marginBottom: "10px",
-                  color: "#ffffff",
-                }}
-              >
-                {service.title}
-              </h3>
-              <p
-                style={{
-                  fontSize: "0.9rem",
-                  color: "var(--text-dim)",
-                  lineHeight: 1.55,
-                  marginBottom: "20px",
-                }}
-              >
-                {service.shortDesc}
-              </p>
-
-              {/* Equipment Used tag */}
-              <div
-                style={{
-                  fontSize: "0.78rem",
-                  color: "var(--accent-cyan)",
-                  fontWeight: "600",
-                  marginBottom: "18px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <Disc size={14} />
-                <span>Station: {service.equipment}</span>
-              </div>
-
-              {/* Key Benefits Checklist */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  marginBottom: "26px",
-                }}
-              >
-                {service.benefits.map((benefit, i) => (
-                  <div
-                    key={i}
+                  {/* Solid Vibrant Red Pill Badge */}
+                  <span
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "10px",
-                      fontSize: "0.84rem",
-                      color: "var(--text-silver)",
+                      fontSize: "0.72rem",
+                      fontWeight: "800",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      padding: "5px 14px",
+                      borderRadius: "9999px",
+                      background: "#ef4444",
+                      color: "#ffffff",
+                      boxShadow: "0 2px 8px rgba(239, 68, 68, 0.25)",
                     }}
                   >
-                    <Check
-                      size={14}
-                      color="var(--accent-crimson)"
-                      style={{ marginTop: "3px", flexShrink: 0 }}
-                    />
-                    <span>{benefit}</span>
-                  </div>
-                ))}
-              </div>
+                    {service.badge}
+                  </span>
 
-              {/* Action Footer */}
-              <div
-                style={{
-                  marginTop: "auto",
-                  paddingTop: "20px",
-                  borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                    Service Rate
-                  </div>
-                  <div style={{ fontSize: "1rem", fontWeight: "700", color: "#ffffff" }}>
-                    {service.price}
+                  {/* Duration Pill Indicator */}
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      fontSize: "0.72rem",
+                      color: "#64748b",
+                      fontWeight: "600",
+                      background: "#f8fafc",
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <span>{service.duration}</span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onBookService(service)}
-                  className="btn btn-secondary"
+                {/* Title */}
+                <h3
                   style={{
-                    padding: "9px 18px",
-                    fontSize: "0.82rem",
-                    borderRadius: "8px",
-                    borderColor: "rgba(255, 42, 42, 0.3)",
+                    fontSize: "1.15rem",
+                    marginBottom: "6px",
+                    color: "#0f172a",
+                    fontWeight: "800",
+                    lineHeight: 1.25,
+                    letterSpacing: "-0.01em",
                   }}
                 >
-                  <Calendar size={14} color="var(--accent-crimson)" />
-                  Book Service
-                </button>
+                  {service.title}
+                </h3>
+
+                {/* Description */}
+                <p
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "#475569",
+                    lineHeight: 1.48,
+                    marginBottom: "10px",
+                  }}
+                >
+                  {service.shortDesc}
+                </p>
+
+                {/* Equipment Station Tag */}
+                <div
+                  style={{
+                    fontSize: "0.74rem",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <Cpu size={13} color="#ef4444" style={{ flexShrink: 0 }} />
+                  <span style={{ color: "#64748b", fontWeight: "600" }}>Station:</span>
+                  <span style={{ color: "#0f172a", fontWeight: "700" }}>{service.equipment}</span>
+                </div>
+
+                {/* Key Benefits List with Styled Check Badges */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "7px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  {service.benefits.slice(0, 3).map((benefit, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "8px",
+                        fontSize: "0.8rem",
+                        color: "#334155",
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "50%",
+                          background: "#fef2f2",
+                          border: "1px solid #fecaca",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                      >
+                        <Check size={10} color="#ef4444" strokeWidth={3} />
+                      </span>
+                      <span>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Footer: Starting Price + Book Button */}
+                <div
+                  style={{
+                    marginTop: "auto",
+                    paddingTop: "14px",
+                    borderTop: "1px solid #f1f5f9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "0.68rem",
+                        color: "#94a3b8",
+                        textTransform: "uppercase",
+                        fontWeight: "700",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      Starting Rate
+                    </div>
+                    <div style={{ fontSize: "1.08rem", fontWeight: "800", color: "#0f172a" }}>
+                      {service.price}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => onBookService(service)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      fontSize: "0.78rem",
+                      fontWeight: "700",
+                      letterSpacing: "0.02em",
+                      borderRadius: "9999px",
+                      border: "none",
+                      background: "#0f172a",
+                      color: "#ffffff",
+                      cursor: "pointer",
+                      transition: "all 0.25s ease",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.18)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#ef4444";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 18px rgba(239, 68, 68, 0.35)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#0f172a";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(15, 23, 42, 0.18)";
+                    }}
+                  >
+                    <span>BOOK SERVICE</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

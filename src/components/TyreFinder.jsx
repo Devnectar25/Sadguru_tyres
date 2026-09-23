@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FINDER_DATA } from "../data/finderData";
-import { Search, Compass, Car, Truck, Zap, Shield, Disc, CheckCircle2, ChevronRight } from "lucide-react";
+import { Search, Car, Truck, Zap, Shield, Disc, CheckCircle2, ChevronRight } from "lucide-react";
 
 export default function TyreFinder({ onFilterApply }) {
   const [vehicleType, setVehicleType] = useState("sedan");
@@ -10,10 +10,7 @@ export default function TyreFinder({ onFilterApply }) {
   const [isSearching, setIsSearching] = useState(false);
   const [foundMatchMessage, setFoundMatchMessage] = useState(null);
 
-  // Available brands based on chosen vehicle type
   const availableBrands = FINDER_DATA.brands[vehicleType] || [];
-  
-  // Available models based on chosen brand
   const currentBrandObj = availableBrands.find((b) => b.id === brand) || availableBrands[0];
   const availableModels = currentBrandObj ? currentBrandObj.models : [];
 
@@ -46,7 +43,6 @@ export default function TyreFinder({ onFilterApply }) {
         onFilterApply({ vehicleType, brand, model, size });
       }
 
-      // Smooth scroll to products section
       const productsElem = document.getElementById("products");
       if (productsElem) {
         productsElem.scrollIntoView({ behavior: "smooth" });
@@ -58,29 +54,31 @@ export default function TyreFinder({ onFilterApply }) {
     <section
       id="finder"
       style={{
-        padding: "36px 0 50px 0",
+        padding: "36px 0",
         position: "relative",
-        background: "linear-gradient(180deg, #06070a 0%, #0c0f16 100%)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+        background: "#ffffff",
+        borderTop: "1px solid #e2e8f0",
+        borderBottom: "1px solid #e2e8f0",
       }}
     >
       <div className="container">
         {/* Section Header */}
-        <div className="section-header" style={{ marginBottom: "24px" }}>
-          <h2 style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", marginBottom: 0 }}>
-            Find Perfect Tyres For Your Vehicle
-          </h2>
+        <div className="section-header" style={{ marginBottom: "32px" }}>
+          <div className="section-eyebrow">
+            FITMENT MATCHING SYSTEM
+          </div>
+          <h2>Find Perfect Tyres For Your Vehicle</h2>
+          <p>Select your vehicle parameters to find 100% factory-compatible tyres with precision guarantees.</p>
         </div>
 
-        {/* Finder Glass Container */}
+        {/* Finder Container */}
         <div
-          className="glass-panel"
           style={{
-            padding: "32px",
-            background: "rgba(14, 18, 26, 0.8)",
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
+            padding: "36px",
+            background: "#f8fafc",
+            borderRadius: "24px",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
+            border: "1px solid #e2e8f0",
           }}
         >
           {/* Step 1: Vehicle Type Tab Switcher */}
@@ -89,7 +87,7 @@ export default function TyreFinder({ onFilterApply }) {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: "12px",
-              marginBottom: "30px",
+              marginBottom: "32px",
             }}
           >
             {FINDER_DATA.vehicleTypes.map((type) => {
@@ -104,26 +102,26 @@ export default function TyreFinder({ onFilterApply }) {
                     justifyContent: "center",
                     gap: "10px",
                     padding: "14px 18px",
-                    borderRadius: "10px",
+                    borderRadius: "14px",
                     cursor: "pointer",
                     transition: "var(--transition-smooth)",
                     background: isSelected
-                      ? "linear-gradient(135deg, #eba763, #cf7a30)"
-                      : "rgba(255, 255, 255, 0.04)",
+                      ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                      : "#ffffff",
                     border: isSelected
-                      ? "1px solid #eba763"
-                      : "1px solid rgba(255, 255, 255, 0.08)",
-                    color: isSelected ? "#07080b" : "var(--text-silver)",
-                    fontWeight: isSelected ? "700" : "500",
+                      ? "none"
+                      : "1px solid #cbd5e1",
+                    color: isSelected ? "#ffffff" : "#0f172a",
+                    fontWeight: isSelected ? "700" : "600",
                     fontSize: "0.88rem",
-                    boxShadow: isSelected ? "0 4px 15px rgba(217, 130, 47, 0.28)" : "none",
+                    boxShadow: isSelected ? "0 6px 20px rgba(239, 68, 68, 0.3)" : "0 2px 6px rgba(15, 23, 42, 0.04)",
                   }}
                 >
-                  {type.id === "sedan" && <Car size={18} color={isSelected ? "#07080b" : "currentColor"} />}
-                  {type.id === "suv" && <Truck size={18} color={isSelected ? "#07080b" : "currentColor"} />}
-                  {type.id === "bike" && <Disc size={18} color={isSelected ? "#07080b" : "currentColor"} />}
-                  {type.id === "ev" && <Zap size={18} color={isSelected ? "#07080b" : "currentColor"} />}
-                  {type.id === "van" && <Shield size={18} color={isSelected ? "#07080b" : "currentColor"} />}
+                  {type.id === "sedan" && <Car size={18} color={isSelected ? "#ffffff" : "#0f172a"} />}
+                  {type.id === "suv" && <Truck size={18} color={isSelected ? "#ffffff" : "#0f172a"} />}
+                  {type.id === "bike" && <Disc size={18} color={isSelected ? "#ffffff" : "#0f172a"} />}
+                  {type.id === "ev" && <Zap size={18} color={isSelected ? "#ffffff" : "#0f172a"} />}
+                  {type.id === "van" && <Shield size={18} color={isSelected ? "#ffffff" : "#0f172a"} />}
                   {type.name}
                 </button>
               );
@@ -145,10 +143,10 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   display: "block",
                   fontSize: "0.8rem",
-                  fontWeight: "600",
+                  fontWeight: "700",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
-                  color: "var(--text-silver)",
+                  color: "#0f172a",
                   marginBottom: "8px",
                 }}
               >
@@ -160,17 +158,18 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   width: "100%",
                   padding: "14px 16px",
-                  borderRadius: "8px",
-                  background: "#121722",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#ffffff",
+                  borderRadius: "12px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  color: "#0f172a",
                   fontSize: "0.95rem",
+                  fontWeight: "600",
                   outline: "none",
                   cursor: "pointer",
                 }}
               >
                 {availableBrands.map((b) => (
-                  <option key={b.id} value={b.id} style={{ background: "#121722", color: "#fff" }}>
+                  <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
                 ))}
@@ -183,10 +182,10 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   display: "block",
                   fontSize: "0.8rem",
-                  fontWeight: "600",
+                  fontWeight: "700",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
-                  color: "var(--text-silver)",
+                  color: "#0f172a",
                   marginBottom: "8px",
                 }}
               >
@@ -198,17 +197,18 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   width: "100%",
                   padding: "14px 16px",
-                  borderRadius: "8px",
-                  background: "#121722",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#ffffff",
+                  borderRadius: "12px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  color: "#0f172a",
                   fontSize: "0.95rem",
+                  fontWeight: "600",
                   outline: "none",
                   cursor: "pointer",
                 }}
               >
                 {availableModels.map((m) => (
-                  <option key={m} value={m} style={{ background: "#121722", color: "#fff" }}>
+                  <option key={m} value={m}>
                     {m}
                   </option>
                 ))}
@@ -221,10 +221,10 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   display: "block",
                   fontSize: "0.8rem",
-                  fontWeight: "600",
+                  fontWeight: "700",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
-                  color: "var(--text-silver)",
+                  color: "#0f172a",
                   marginBottom: "8px",
                 }}
               >
@@ -236,17 +236,18 @@ export default function TyreFinder({ onFilterApply }) {
                 style={{
                   width: "100%",
                   padding: "14px 16px",
-                  borderRadius: "8px",
-                  background: "#121722",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#ffffff",
+                  borderRadius: "12px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  color: "#0f172a",
                   fontSize: "0.95rem",
+                  fontWeight: "600",
                   outline: "none",
                   cursor: "pointer",
                 }}
               >
                 {FINDER_DATA.sizes.map((s) => (
-                  <option key={s} value={s} style={{ background: "#121722", color: "#fff" }}>
+                  <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
@@ -258,12 +259,32 @@ export default function TyreFinder({ onFilterApply }) {
               <button
                 onClick={handleFindTyres}
                 disabled={isSearching}
-                className="btn btn-primary"
                 style={{
                   width: "100%",
                   padding: "15px 20px",
                   fontSize: "0.95rem",
+                  fontWeight: "700",
                   letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  borderRadius: "9999px",
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 6px 20px rgba(239, 68, 68, 0.3)",
+                  transition: "var(--transition-smooth)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(239, 68, 68, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(239, 68, 68, 0.3)";
                 }}
               >
                 {isSearching ? (
@@ -284,7 +305,7 @@ export default function TyreFinder({ onFilterApply }) {
                 ) : (
                   <>
                     <Search size={18} />
-                    Find Tyres
+                    FIND TYRES
                   </>
                 )}
               </button>
@@ -297,26 +318,27 @@ export default function TyreFinder({ onFilterApply }) {
               style={{
                 marginTop: "24px",
                 padding: "14px 20px",
-                background: "rgba(91, 138, 131, 0.1)",
-                border: "1px solid rgba(91, 138, 131, 0.32)",
-                borderRadius: "8px",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                color: "#ffffff",
+                color: "#1e40af",
                 fontSize: "0.9rem",
+                fontWeight: "600",
                 animation: "fadeIn 0.3s ease-out",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <CheckCircle2 size={18} color="var(--accent-cyan)" />
+                <CheckCircle2 size={18} color="#2563eb" />
                 <span>{foundMatchMessage}</span>
               </div>
               <a
                 href="#products"
                 style={{
-                  color: "var(--accent-cyan)",
-                  fontWeight: "600",
+                  color: "#ef4444",
+                  fontWeight: "700",
                   display: "flex",
                   alignItems: "center",
                   gap: "4px",
