@@ -159,7 +159,9 @@ section[id],
 #about,
 #contact,
 #finder,
-#why-us {
+#why-us,
+#why-choose-us,
+#cta {
   scroll-margin-top: 85px;
 }
 
@@ -613,17 +615,25 @@ textarea {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
   animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   color: var(--accent-navy);
 }
 
+.modal-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Toast Alert Notification */
 .toast-notice {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
+  bottom: 92px;
+  right: 24px;
   background: var(--accent-navy);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #ffffff;
@@ -682,4 +692,18 @@ textarea {
     padding: 12px 20px;
     font-size: 0.88rem;
   }
+}
+
+/* Invisible Scrollbar Utility */
+.hide-scrollbar,
+.invisible-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar,
+.invisible-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }

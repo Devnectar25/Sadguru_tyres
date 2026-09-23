@@ -25,7 +25,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
 
   return (
     <footer
-      id="contact"
+      id="footer"
       style={{
         background: "#EAF2FC",
         position: "relative",
@@ -47,11 +47,12 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
           className="footer-grid"
         >
           {/* Column 1: Brand Logo & Info */}
-          <div>
+          <div className="footer-col-brand">
             <div
               onClick={handleLogoClick}
               role="button"
               tabIndex={0}
+              className="footer-brand-logo"
               aria-label="Sadguru Tyres - Back to Top"
               title="Back to Top"
               style={{
@@ -108,11 +109,11 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
               </div>
             </div>
 
-            <p style={{ fontSize: "0.88rem", lineHeight: 1.6, marginBottom: "20px", color: "#475569", maxWidth: "340px" }}>
+            <p className="footer-brand-desc" style={{ fontSize: "0.88rem", lineHeight: 1.6, marginBottom: "20px", color: "#475569", maxWidth: "340px" }}>
               Premium tyre sales & precision 3D alignment center. Built for maximum road grip, whisper-quiet cruising, and complete driving confidence.
             </p>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="footer-badges" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "6px 12px", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <ShieldCheck size={14} color="#ef4444" /> ISO 9001:2026
               </span>
@@ -123,7 +124,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
           </div>
 
           {/* Column 2: Tyre Collections */}
-          <div>
+          <div className="footer-col-tyres">
             <h4
               style={{
                 fontSize: "0.92rem",
@@ -146,7 +147,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
           </div>
 
           {/* Column 3: Workshop Services */}
-          <div>
+          <div className="footer-col-services">
             <h4
               style={{
                 fontSize: "0.92rem",
@@ -169,7 +170,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
           </div>
 
           {/* Column 4: Contact & Hotline */}
-          <div>
+          <div className="footer-col-contact">
             <h4
               style={{
                 fontSize: "0.92rem",
@@ -183,27 +184,27 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
               Concierge & Hotline
             </h4>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.88rem", marginBottom: "20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#0f172a", fontWeight: "600" }}>
+            <div className="footer-contact-list" style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.88rem", marginBottom: "20px" }}>
+              <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#0f172a", fontWeight: "600" }}>
                 <Phone size={15} color="#ef4444" />
                 <span>+91 1800 15 11 00</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
+              <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
                 <Mail size={15} color="#0f172a" />
                 <span>care@sadgurutyres.com</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
+              <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
                 <MapPin size={15} color="#0f172a" />
                 <span>Mon - Sat 9:00 AM - 8:00 PM</span>
               </div>
             </div>
 
             {/* Newsletter form */}
-            <form onSubmit={handleNewsletterSubmit}>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "600", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <form className="footer-newsletter-form" onSubmit={handleNewsletterSubmit}>
+              <div className="footer-newsletter-label" style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "600", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Subscribe for updates
               </div>
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div className="footer-newsletter-inputs" style={{ display: "flex", gap: "8px" }}>
                 <input
                   type="email"
                   required
@@ -238,7 +239,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
                 </button>
               </div>
               {subscribed && (
-                <div style={{ fontSize: "0.78rem", color: "#16a34a", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", fontWeight: "600" }}>
+                <div className="footer-newsletter-success" style={{ fontSize: "0.78rem", color: "#16a34a", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", fontWeight: "600" }}>
                   <Check size={12} /> Subscribed to updates!
                 </div>
               )}
@@ -248,6 +249,7 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
 
         {/* Bottom Bar */}
         <div
+          className="footer-bottom-bar"
           style={{
             paddingTop: "14px",
             borderTop: "1px solid #d8e5f3",
@@ -260,17 +262,17 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
             color: "#334155",
           }}
         >
-          <div>
+          <div className="footer-bottom-copy">
             © {new Date().getFullYear()} Sadguru Tyres. All rights reserved.
           </div>
 
-          <div style={{ display: "flex", gap: "16px" }}>
+          <div className="footer-bottom-links" style={{ display: "flex", gap: "16px" }}>
             <a href="#hero" className="footer-sublink">Privacy Policy</a>
             <a href="#hero" className="footer-sublink">Terms & Conditions</a>
             <a href="#hero" className="footer-sublink">Sitemap</a>
           </div>
 
-          <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+          <div className="footer-bottom-social" style={{ display: "flex", gap: "14px", alignItems: "center" }}>
             {/* Facebook Icon */}
             <a href="#hero" style={{ color: "#475569" }} aria-label="Facebook">
               <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
@@ -313,12 +315,141 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
         @media (max-width: 980px) {
           .footer-grid {
             grid-template-columns: 1fr 1fr !important;
-            gap: 32px !important;
+            gap: 32px 24px !important;
+          }
+          .footer-col-brand {
+            grid-column: 1 / -1 !important;
+          }
+          .footer-col-tyres {
+            grid-column: 1 !important;
+          }
+          .footer-col-services {
+            grid-column: 2 !important;
+          }
+          .footer-col-contact {
+            grid-column: 1 / -1 !important;
           }
         }
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
           .footer-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 28px 16px !important;
+          }
+          .footer-col-brand {
+            grid-column: 1 / -1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+          }
+          .footer-brand-logo {
+            justify-content: center !important;
+          }
+          .footer-brand-desc {
+            text-align: center !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+          }
+          .footer-badges {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+          }
+          .footer-col-tyres {
+            grid-column: 1 !important;
+            text-align: center !important;
+          }
+          .footer-col-tyres h4 {
+            text-align: center !important;
+            font-size: 0.85rem !important;
+            margin-bottom: 12px !important;
+          }
+          .footer-col-tyres ul {
+            align-items: center !important;
+            text-align: center !important;
+            gap: 10px !important;
+            font-size: 0.82rem !important;
+          }
+          .footer-col-tyres li {
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .footer-col-services {
+            grid-column: 2 !important;
+            text-align: center !important;
+          }
+          .footer-col-services h4 {
+            text-align: center !important;
+            font-size: 0.85rem !important;
+            margin-bottom: 12px !important;
+          }
+          .footer-col-services ul {
+            align-items: center !important;
+            text-align: center !important;
+            gap: 10px !important;
+            font-size: 0.82rem !important;
+          }
+          .footer-col-services li {
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .footer-col-contact {
+            grid-column: 1 / -1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+          }
+          .footer-col-contact h4 {
+            text-align: center !important;
+          }
+          .footer-contact-list {
+            align-items: center !important;
+            width: 100% !important;
+          }
+          .footer-contact-item {
+            justify-content: center !important;
+            width: 100% !important;
+          }
+          .footer-newsletter-form {
+            width: 100% !important;
+            max-width: 320px !important;
+            margin: 0 auto !important;
+          }
+          .footer-newsletter-label {
+            text-align: center !important;
+          }
+          .footer-newsletter-inputs {
+            justify-content: center !important;
+          }
+          .footer-newsletter-success {
+            justify-content: center !important;
+          }
+          .footer-bottom-bar {
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            gap: 14px !important;
+          }
+          .footer-bottom-copy {
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .footer-bottom-links {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+            width: 100% !important;
+          }
+          .footer-bottom-social {
+            justify-content: center !important;
+            width: 100% !important;
+          }
+          .footer-link {
+            word-break: break-word;
+            text-align: center !important;
+          }
+          .footer-link:hover {
+            padding-left: 0 !important;
           }
         }
       `}</style>

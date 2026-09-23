@@ -18,6 +18,7 @@ import QuoteModal from "./components/QuoteModal";
 import LoginModal from "./components/LoginModal";
 import SectionReveal from "./components/SectionReveal";
 import BrandSection from "./components/BrandSection";
+import ChatBot from "./components/ChatBot";
 import { CheckCircle2, X } from "lucide-react";
 import { TYRES_DATA } from "./data/tyresData";
 
@@ -25,6 +26,7 @@ export default function App() {
   // Navigation: "home" | "catalog" | "product-detail"
   const [currentPage, setCurrentPage] = useState("home");
   const [selectedTyreId, setSelectedTyreId] = useState(TYRES_DATA[0].id);
+  const [shouldScrollToProducts, setShouldScrollToProducts] = useState(false);
 
   // App settings & interactions
   const [currency, setCurrency] = useState("INR");
@@ -76,13 +78,30 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleGoToCatalog = () => {
+  const handleGoToCatalog = (scrollToProducts = false) => {
+    const shouldScroll = typeof scrollToProducts === "boolean" ? scrollToProducts : false;
     setCurrentPage("catalog");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShouldScrollToProducts(shouldScroll ? Date.now() : false);
+    if (shouldScroll) {
+      setTimeout(() => {
+        const el = document.getElementById("catalog-products");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 430, behavior: "smooth" });
+        }
+      }, 70);
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }, 50);
+    }
   };
 
   const handleGoToHome = () => {
     setCurrentPage("home");
+    setShouldScrollToProducts(false);
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     setTimeout(() => {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -90,15 +109,20 @@ export default function App() {
   };
 
   const scrollToSection = (sectionId) => {
+    const targetId = sectionId === "about" ? "why-choose-us" : sectionId;
+    const doScroll = () => {
+      const el = document.getElementById(targetId) || document.getElementById(sectionId);
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.pageYOffset - 85;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+      }
+    };
+
     if (currentPage !== "home") {
       setCurrentPage("home");
-      setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      setTimeout(doScroll, 120);
     } else {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
+      doScroll();
     }
   };
 
@@ -122,7 +146,7 @@ export default function App() {
         <main>
           {/* 2. Hero Section */}
           <Hero
-            onExploreClick={handleGoToCatalog}
+            onExploreClick={() => scrollToSection("products")}
             onServicesClick={() => scrollToSection("services")}
             onFinderClick={() => scrollToSection("finder")}
           />
@@ -162,6 +186,7 @@ export default function App() {
           {/* 10. Final Call to Action */}
           <SectionReveal>
             <FinalCTA
+              onExploreClick={() => scrollToSection("products")}
               onFinderClick={() => scrollToSection("finder")}
               onBookClick={() =>
                 setBookingState({ isOpen: true, service: null, tyre: null })
@@ -179,6 +204,7 @@ export default function App() {
           wishlistIds={wishlistIds}
           onToggleWishlist={handleToggleWishlist}
           onNavigateHome={handleGoToHome}
+          shouldScrollToProducts={shouldScrollToProducts}
         />
       )}
 
@@ -293,6 +319,16 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* Floating Interactive ChatBot */}
+      <ChatBot
+        onOpenFinder={() => scrollToSection("finder")}
+        onOpenBooking={(service) =>
+          setBookingState({ isOpen: true, service: service || null, tyre: null })
+        }
+        onOpenCatalog={handleGoToCatalog}
+        onOpenContact={() => scrollToSection("contact")}
+      />
     </div>
   );
 }

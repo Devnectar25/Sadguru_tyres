@@ -1,17 +1,19 @@
 import React from "react";
-import { ArrowRight, Calendar, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 
-export default function FinalCTA({ onFinderClick, onBookClick }) {
+export default function FinalCTA({ onFinderClick, onExploreClick, onBookClick }) {
   return (
     <section
-      id="cta"
+      id="contact"
       style={{
         padding: "36px 0",
         position: "relative",
         background: "#ffffff",
         overflow: "hidden",
+        scrollMarginTop: "85px",
       }}
     >
+      <div id="cta" style={{ position: "absolute", top: 0, scrollMarginTop: "85px" }} />
       <div className="container" style={{ position: "relative", zIndex: 5 }}>
         <div
           style={{
@@ -85,7 +87,7 @@ export default function FinalCTA({ onFinderClick, onBookClick }) {
               }}
             >
               <button
-                onClick={onFinderClick}
+                onClick={onExploreClick || onFinderClick}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

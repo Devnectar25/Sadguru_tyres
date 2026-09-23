@@ -36,14 +36,16 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-content"
+        className="modal-content hide-scrollbar"
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: "580px",
-          padding: "32px",
+          padding: "26px 28px",
           background: "#ffffff",
           borderRadius: "24px",
           color: "#0f172a",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         {/* Header */}
@@ -52,8 +54,8 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "24px",
-            paddingBottom: "16px",
+            marginBottom: "18px",
+            paddingBottom: "14px",
             borderBottom: "1px solid #e2e8f0",
           }}
         >
@@ -100,7 +102,7 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
         </div>
 
         {/* Booking Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div>
             <label style={{ display: "block", fontSize: "0.8rem", color: "#0f172a", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
               Service Required

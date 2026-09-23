@@ -11,6 +11,7 @@ export default function ServicesSection({ onBookService }) {
         padding: "30px 0",
         position: "relative",
         background: "#f8fafc",
+        scrollMarginTop: "85px",
       }}
     >
       <div className="container">

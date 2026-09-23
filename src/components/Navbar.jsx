@@ -32,18 +32,25 @@ export default function Navbar({
         window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       }, 50);
     } else if (target === "tyres" || target === "catalog") {
-      onNavigateCatalog();
+      onNavigateCatalog(false);
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }, 50);
     } else {
+      const targetId = target === "about" ? "why-choose-us" : target;
+      const doScroll = () => {
+        const el = document.getElementById(targetId) || document.getElementById(target);
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.pageYOffset - 85;
+          window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        }
+      };
       if (currentPage !== "home") {
         onNavigateHome();
-        setTimeout(() => {
-          const el = document.getElementById(target);
-          if (el) el.scrollIntoView({ behavior: "smooth" });
-        }, 100);
+        setTimeout(doScroll, 120);
       } else {
-        const el = document.getElementById(target);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
+        doScroll();
       }
     }
   };
@@ -166,11 +173,11 @@ export default function Navbar({
               { id: "catalog", label: "Products" },
               { id: "services", label: "Services" },
               { id: "about", label: "About Us" },
-              { id: "contact", label: "Contact" },
+              { id: "contact", label: "Contact Us" },
             ].map((nav) => {
               const isActive =
                 (nav.id === "home" && currentPage === "home") ||
-                (nav.id === "catalog" && currentPage === "catalog");
+                (nav.id === "catalog" && (currentPage === "catalog" || currentPage === "product-detail"));
 
               return (
                 <button
@@ -225,6 +232,7 @@ export default function Navbar({
             {/* Phone Button Pill matching reference design */}
             <a
               href="tel:1800151100"
+              className="desktop-cta"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -237,6 +245,8 @@ export default function Navbar({
                 color: "#ffffff",
                 boxShadow: "0 4px 14px rgba(15, 23, 42, 0.2)",
                 transition: "var(--transition-smooth)",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#1e293b";
@@ -319,27 +329,38 @@ export default function Navbar({
             boxShadow: "0 20px 40px rgba(15, 23, 42, 0.15)",
           }}
         >
-          {["home", "catalog", "services", "about", "contact"].map((navId) => (
-            <button
-              key={navId}
-              onClick={() => handleNav(navId)}
-              style={{
-                background: "none",
-                border: "none",
-                fontFamily: "var(--font-body)",
-                fontSize: "1.1rem",
-                fontWeight: "500",
-                color: navId === "catalog" ? "#ef4444" : "#0f172a",
-                textAlign: "left",
-                padding: "10px 0",
-                borderBottom: "1px solid #f1f5f9",
-                cursor: "pointer",
-                textTransform: "capitalize",
-              }}
-            >
-              {navId === "catalog" ? "Explore Products →" : navId}
-            </button>
-          ))}
+          {[
+            { id: "home", label: "Home" },
+            { id: "catalog", label: "Products" },
+            { id: "services", label: "Services" },
+            { id: "about", label: "About Us" },
+            { id: "contact", label: "Contact Us" },
+          ].map((item) => {
+            const isActive =
+              (item.id === "home" && currentPage === "home") ||
+              (item.id === "catalog" && (currentPage === "catalog" || currentPage === "product-detail"));
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNav(item.id)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "1.1rem",
+                  fontWeight: isActive ? "600" : "500",
+                  color: isActive ? "#ef4444" : "#0f172a",
+                  textAlign: "left",
+                  padding: "10px 0",
+                  borderBottom: "1px solid #f1f5f9",
+                  cursor: "pointer",
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
 
           <button
             onClick={() => {
@@ -365,6 +386,29 @@ export default function Navbar({
             <User size={18} />
             <span>Log In</span>
           </button>
+
+          <a
+            href="tel:1800151100"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "999px",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+              color: "#0f172a",
+              padding: "12px",
+              marginTop: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              textDecoration: "none",
+            }}
+          >
+            <Phone size={16} color="#0f172a" />
+            <span>Call 1800 15 11 00</span>
+          </a>
         </div>
       )}
 

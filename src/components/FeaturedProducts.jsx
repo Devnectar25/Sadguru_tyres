@@ -33,6 +33,7 @@ export default function FeaturedProducts({
         padding: "36px 0",
         position: "relative",
         background: "#f8fafc",
+        scrollMarginTop: "85px",
       }}
     >
       <div className="container">

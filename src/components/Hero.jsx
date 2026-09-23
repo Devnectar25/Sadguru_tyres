@@ -1,38 +1,69 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowRight, Settings, Users, Store, Globe2 } from "lucide-react";
 
+const HERO_SLIDES = [
+  {
+    image: "/images/hero_scenic_bg.png",
+    alt: "High-Performance Car Tyres on Scenic Alpine Highway",
+  },
+  {
+    image: "/images/hero_slide_2.jpg",
+    alt: "Dual-Sport Adventure Motorcycle Tyre in Lush Forest Road",
+  },
+  {
+    image: "/images/hero_slide_3.png",
+    alt: "Heavy Duty Commercial Truck Tyre in Logistics Port",
+  },
+];
+
 export default function Hero({ onExploreClick, onFinderClick, onServicesClick }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section
       id="hero"
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "540px",
+        minHeight: "520px",
         display: "flex",
         alignItems: "center",
-        padding: "34px 0 50px 0",
+        padding: "26px 0 38px 0",
         scrollMarginTop: "90px",
         overflow: "hidden",
         background: "#0f172a",
         textAlign: "left",
       }}
     >
-      {/* Background Scenic Image - Edge-to-Edge Free on Left and Right */}
-      <img
-        src="/images/hero_scenic_bg.png"
-        alt="Scenic Highway & Performance Tyres"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          objectPosition: "center right",
-          zIndex: 0,
-        }}
-      />
+      {/* Background Scenic Carousel Images - Smooth 3-Second Crossfade */}
+      {HERO_SLIDES.map((slide, index) => (
+        <img
+          key={slide.image}
+          src={slide.image}
+          alt={slide.alt}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center right",
+            zIndex: 0,
+            opacity: currentSlide === index ? 1 : 0,
+            transform: currentSlide === index ? "scale(1.02)" : "scale(1)",
+            transition: "opacity 0.9s ease-in-out, transform 3.5s ease-out",
+            pointerEvents: "none",
+          }}
+        />
+      ))}
 
       {/* Soft Clear Gradient Overlay (No blur) */}
       <div
@@ -131,7 +162,7 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
               display: "flex",
               flexWrap: "wrap",
               gap: "16px",
-              marginBottom: "40px",
+              marginBottom: "30px",
             }}
           >
             <button
@@ -168,7 +199,7 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
             </button>
 
             <button
-              onClick={onServicesClick || onFinderClick}
+              onClick={onServicesClick}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -285,11 +316,55 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
       </div>
     </div>
 
+      {/* Slide Indicators */}
+      <div
+        className="hero-slide-indicators"
+        style={{
+          position: "absolute",
+          bottom: "18px",
+          right: "32px",
+          zIndex: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          padding: "6px 12px",
+          borderRadius: "999px",
+          border: "1px solid rgba(226, 232, 240, 0.8)",
+          boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)",
+        }}
+      >
+        {HERO_SLIDES.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentSlide(idx)}
+            aria-label={`Slide ${idx + 1}`}
+            style={{
+              width: currentSlide === idx ? "22px" : "8px",
+              height: "7px",
+              borderRadius: "999px",
+              background: currentSlide === idx ? "#ef4444" : "#94a3b8",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+              padding: 0,
+            }}
+          />
+        ))}
+      </div>
+
       <style>{`
         @media (max-width: 960px) {
           #hero {
-            padding: 30px 0 40px 0 !important;
+            padding: 22px 0 46px 0 !important;
             min-height: auto !important;
+          }
+          .hero-slide-indicators {
+            bottom: 12px !important;
+            right: 50% !important;
+            transform: translateX(50%) !important;
           }
         }
       `}</style>

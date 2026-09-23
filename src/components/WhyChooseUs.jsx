@@ -104,8 +104,10 @@ export default function WhyChooseUs() {
         background: "#ffffff",
         borderTop: "1px solid #e2e8f0",
         borderBottom: "1px solid #e2e8f0",
+        scrollMarginTop: "85px",
       }}
     >
+      <div id="about" style={{ position: "absolute", top: 0, scrollMarginTop: "85px" }} />
       <div className="container">
         {/* Header */}
         <div className="section-header" style={{ marginBottom: "40px" }}>

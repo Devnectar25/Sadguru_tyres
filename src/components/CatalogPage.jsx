@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { TYRES_DATA } from "../data/tyresData";
 import { Search, Heart, Eye, Star, Car, Truck, Disc, Sparkles, X, RotateCw } from "lucide-react";
 
@@ -8,6 +8,7 @@ export default function CatalogPage({
   wishlistIds,
   onToggleWishlist,
   onNavigateHome,
+  shouldScrollToProducts,
 }) {
   const [vehicleType, setVehicleType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,13 +74,30 @@ export default function CatalogPage({
     setSortBy("recommended");
   };
 
+  useEffect(() => {
+    if (shouldScrollToProducts) {
+      const scroll = () => {
+        const el = document.getElementById("catalog-products");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      };
+      const t1 = setTimeout(scroll, 50);
+      const t2 = setTimeout(scroll, 180);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [shouldScrollToProducts]);
+
   return (
     <div
+      className="catalog-page-container"
       style={{
-        minHeight: "100vh",
         background: "#f8fafc",
         paddingTop: "10px",
-        paddingBottom: "100px",
+        paddingBottom: "36px",
       }}
     >
       <div className="container">
@@ -154,14 +172,17 @@ export default function CatalogPage({
           </div>
         </section>
 
-        {/* Vehicle Type Selector */}
+        {/* Vehicle Type Selector & Products Anchor */}
         <div
+          id="catalog-products"
+          className="vehicle-type-selector"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "12px",
             marginBottom: "20px",
             flexWrap: "wrap",
+            scrollMarginTop: "85px",
           }}
         >
           {[
@@ -177,6 +198,7 @@ export default function CatalogPage({
               <button
                 key={item.id}
                 onClick={() => setVehicleType(item.id)}
+                className="vehicle-type-btn"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -598,6 +620,38 @@ export default function CatalogPage({
           )}
         </main>
       </div>
+
+      <style>{`
+        @media (max-width: 680px) {
+          .catalog-page-container {
+            padding-bottom: 24px !important;
+          }
+          .vehicle-type-selector {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            max-width: 440px !important;
+            margin: 0 auto 20px auto !important;
+            width: 100% !important;
+          }
+          .vehicle-type-btn {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 11px 8px !important;
+            font-size: 0.82rem !important;
+            gap: 7px !important;
+            text-align: center !important;
+          }
+          .vehicle-type-btn span {
+            white-space: nowrap !important;
+          }
+          .vehicle-type-btn svg {
+            flex-shrink: 0 !important;
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
