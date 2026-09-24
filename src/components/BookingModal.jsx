@@ -34,10 +34,11 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} onWheel={(e) => e.stopPropagation()}>
       <div
         className="modal-content hide-scrollbar"
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
         style={{
           maxWidth: "580px",
           padding: "26px 28px",
@@ -157,7 +158,7 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div className="booking-form-grid-2col" style={{ marginBottom: "14px" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", color: "#0f172a", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
                 Preferred Date
@@ -215,7 +216,7 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div className="booking-form-grid-2col" style={{ marginBottom: "14px" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", color: "#0f172a", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
                 Full Name

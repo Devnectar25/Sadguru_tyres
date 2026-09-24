@@ -59,10 +59,11 @@ export default function DealerModal({ tyre, onClose, onSelectDealer }) {
   );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} onWheel={(e) => e.stopPropagation()}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
         style={{
           maxWidth: "720px",
           padding: "30px",

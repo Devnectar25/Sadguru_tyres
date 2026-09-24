@@ -10,10 +10,11 @@ export default function TyreDetailModal({ tyre, onClose, currency, onBookTyre })
     currency === "USD" ? `$${tyre.priceUSD}` : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} onWheel={(e) => e.stopPropagation()}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
         style={{
           maxWidth: "880px",
           padding: "0",

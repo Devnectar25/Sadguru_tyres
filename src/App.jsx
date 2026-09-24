@@ -53,6 +53,82 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Comprehensive background scroll prevention whenever any modal is open
+  const isAnyModalOpen = Boolean(
+    quickDetailModalTyre ||
+    bookingState.isOpen ||
+    dealerModalTyre ||
+    quoteModalTyre ||
+    isSearchOpen ||
+    isLoginOpen
+  );
+
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.classList.add("modal-open");
+    document.documentElement.classList.add("modal-open");
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // Intercept wheel events so they NEVER bubble or chain to background window/body
+    const handleGlobalWheel = (e) => {
+      const modalContent = e.target.closest(".modal-content");
+      if (!modalContent) {
+        // Scrolling on overlay backdrop or outside modal content -> block scroll
+        e.preventDefault();
+        return;
+      }
+
+      const isScrollable = modalContent.scrollHeight > modalContent.clientHeight;
+      if (!isScrollable) {
+        // Modal content fits completely within viewport -> block background scroll
+        e.preventDefault();
+        return;
+      }
+
+      // Check boundary edges to prevent overscroll chaining to page behind
+      const atTop = modalContent.scrollTop <= 0 && e.deltaY < 0;
+      const atBottom =
+        modalContent.scrollTop + modalContent.clientHeight >= modalContent.scrollHeight - 1 &&
+        e.deltaY > 0;
+
+      if (atTop || atBottom) {
+        e.preventDefault();
+      }
+    };
+
+    const handleGlobalTouchMove = (e) => {
+      const modalContent = e.target.closest(".modal-content");
+      if (!modalContent) {
+        e.preventDefault();
+        return;
+      }
+      const isScrollable = modalContent.scrollHeight > modalContent.clientHeight;
+      if (!isScrollable) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener("wheel", handleGlobalWheel, { passive: false });
+    window.addEventListener("touchmove", handleGlobalTouchMove, { passive: false });
+
+    return () => {
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+      window.removeEventListener("wheel", handleGlobalWheel);
+      window.removeEventListener("touchmove", handleGlobalTouchMove);
+    };
+  }, [isAnyModalOpen]);
+
   const showToast = (message) => {
     setToast(message);
     setTimeout(() => {
