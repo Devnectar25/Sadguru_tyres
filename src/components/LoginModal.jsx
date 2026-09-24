@@ -21,6 +21,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
     <div
       className="modal-overlay"
       onClick={onClose}
+      onWheel={(e) => e.preventDefault()}
       style={{
         position: "fixed",
         top: 0,
@@ -40,6 +41,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
       }}
     >
       <div
+        className="modal-content"
         style={{
           maxWidth: "460px",
           width: "100%",
@@ -52,6 +54,7 @@ export default function LoginModal({ onClose, onLoginSuccess }) {
           boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
         }}
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.preventDefault()}
       >
         {/* Header */}
         <div

@@ -33,12 +33,32 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
     }, 600);
   };
 
+  const handleContentWheel = (e) => {
+    const el = e.currentTarget;
+    const isScrollable = el.scrollHeight > el.clientHeight + 4;
+    if (!isScrollable) {
+      e.preventDefault();
+      return;
+    }
+    const atTop = el.scrollTop <= 0 && e.deltaY < 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2 && e.deltaY > 0;
+    if (atTop || atBottom) {
+      e.preventDefault();
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose} onWheel={(e) => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      onWheel={(e) => {
+        if (e.target === e.currentTarget) e.preventDefault();
+      }}
+    >
       <div
         className="modal-content hide-scrollbar"
         onClick={(e) => e.stopPropagation()}
-        onWheel={(e) => e.stopPropagation()}
+        onWheel={handleContentWheel}
         style={{
           maxWidth: "580px",
           padding: "26px 28px",

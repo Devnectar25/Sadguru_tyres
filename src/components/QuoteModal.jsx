@@ -168,7 +168,7 @@ export default function QuoteModal({ tyre, currency, onClose, onQuoteSubmitted }
           </div>
 
           {/* Contact and Car Info */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div className="booking-form-grid-2col" style={{ marginBottom: "14px" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", color: "#0f172a", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
                 Vehicle Details

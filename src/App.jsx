@@ -66,37 +66,43 @@ export default function App() {
   useEffect(() => {
     if (!isAnyModalOpen) return;
 
-    const originalOverflow = document.body.style.overflow;
-    const originalPaddingRight = document.body.style.paddingRight;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyPaddingRight = document.body.style.paddingRight;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
     document.body.classList.add("modal-open");
     document.documentElement.classList.add("modal-open");
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
 
-    // Intercept wheel events so they NEVER bubble or chain to background window/body
+    // Intercept in the CAPTURE phase so no child stopPropagation can block it, and zero scroll leaks
     const handleGlobalWheel = (e) => {
-      const modalContent = e.target.closest(".modal-content");
+      const modalContent = e.target.closest ? e.target.closest(".modal-content") : null;
       if (!modalContent) {
-        // Scrolling on overlay backdrop or outside modal content -> block scroll
+        // Over backdrop overlay or outside modal content -> cancel wheel completely
         e.preventDefault();
         return;
       }
 
-      const isScrollable = modalContent.scrollHeight > modalContent.clientHeight;
-      if (!isScrollable) {
-        // Modal content fits completely within viewport -> block background scroll
+      // Check if modal-content is actually configured to scroll
+      const style = window.getComputedStyle(modalContent);
+      const isScrollableType = style.overflowY === "auto" || style.overflowY === "scroll";
+      const maxScroll = modalContent.scrollHeight - modalContent.clientHeight;
+
+      // If it doesn't have auto/scroll overflow or content fits without scrolling (like LoginModal or compact BookingModal)
+      if (!isScrollableType || maxScroll <= 2) {
         e.preventDefault();
         return;
       }
 
-      // Check boundary edges to prevent overscroll chaining to page behind
+      // If it is scrollable, check boundary edges to prevent overscroll chaining to page behind
       const atTop = modalContent.scrollTop <= 0 && e.deltaY < 0;
       const atBottom =
-        modalContent.scrollTop + modalContent.clientHeight >= modalContent.scrollHeight - 1 &&
+        modalContent.scrollTop + modalContent.clientHeight >= modalContent.scrollHeight - 2 &&
         e.deltaY > 0;
 
       if (atTop || atBottom) {
@@ -104,28 +110,56 @@ export default function App() {
       }
     };
 
+    let touchStartY = 0;
+    const handleGlobalTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
     const handleGlobalTouchMove = (e) => {
-      const modalContent = e.target.closest(".modal-content");
+      const modalContent = e.target.closest ? e.target.closest(".modal-content") : null;
       if (!modalContent) {
         e.preventDefault();
         return;
       }
-      const isScrollable = modalContent.scrollHeight > modalContent.clientHeight;
-      if (!isScrollable) {
+
+      const style = window.getComputedStyle(modalContent);
+      const isScrollableType = style.overflowY === "auto" || style.overflowY === "scroll";
+      const maxScroll = modalContent.scrollHeight - modalContent.clientHeight;
+
+      if (!isScrollableType || maxScroll <= 2) {
         e.preventDefault();
+        return;
+      }
+
+      if (e.touches && e.touches[0]) {
+        const currentY = e.touches[0].clientY;
+        const deltaY = touchStartY - currentY;
+        const atTop = modalContent.scrollTop <= 0 && deltaY < 0;
+        const atBottom =
+          modalContent.scrollTop + modalContent.clientHeight >= modalContent.scrollHeight - 2 &&
+          deltaY > 0;
+
+        if (atTop || atBottom) {
+          e.preventDefault();
+        }
       }
     };
 
-    window.addEventListener("wheel", handleGlobalWheel, { passive: false });
-    window.addEventListener("touchmove", handleGlobalTouchMove, { passive: false });
+    window.addEventListener("wheel", handleGlobalWheel, { passive: false, capture: true });
+    window.addEventListener("touchstart", handleGlobalTouchStart, { passive: true, capture: true });
+    window.addEventListener("touchmove", handleGlobalTouchMove, { passive: false, capture: true });
 
     return () => {
       document.body.classList.remove("modal-open");
       document.documentElement.classList.remove("modal-open");
-      document.body.style.overflow = originalOverflow;
-      document.body.style.paddingRight = originalPaddingRight;
-      window.removeEventListener("wheel", handleGlobalWheel);
-      window.removeEventListener("touchmove", handleGlobalTouchMove);
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.paddingRight = originalBodyPaddingRight;
+      window.removeEventListener("wheel", handleGlobalWheel, { capture: true });
+      window.removeEventListener("touchstart", handleGlobalTouchStart, { capture: true });
+      window.removeEventListener("touchmove", handleGlobalTouchMove, { capture: true });
     };
   }, [isAnyModalOpen]);
 
