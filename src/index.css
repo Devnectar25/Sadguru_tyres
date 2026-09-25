@@ -726,6 +726,11 @@ body.modal-open {
    PRODUCT DETAIL & MODAL RESPONSIVE ENHANCEMENTS
    ========================================================================== */
 
+/* Top breadcrumb & back button bar - hidden on desktop view */
+.pdp-top-bar {
+  display: none !important;
+}
+
 .product-hero-grid {
   display: grid;
   grid-template-columns: 1fr 1.05fr;
@@ -801,14 +806,35 @@ body.modal-open {
   gap: 14px;
 }
 
+.similar-tyres-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
 @media (max-width: 992px) {
   .product-hero-grid {
     grid-template-columns: 1fr !important;
     gap: 28px !important;
   }
+
+  .similar-tyres-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .similar-tyres-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 768px) {
+  .pdp-top-bar {
+    display: flex !important;
+  }
+
   .product-image-stage {
     height: 350px !important;
     padding: 20px !important;

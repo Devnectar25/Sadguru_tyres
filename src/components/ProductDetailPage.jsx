@@ -43,11 +43,51 @@ export default function ProductDetailPage({
 
   const isWishlisted = wishlistIds.includes(tyre.id);
 
-  // Similar tyres for comparison
+  // Similar tyres for comparison - Always guarantees exactly 3 proper matching tyres
   const similarTyres = useMemo(() => {
-    return TYRES_DATA.filter(
-      (t) => t.id !== tyre.id && (t.vehicleType === tyre.vehicleType || t.category === tyre.category)
-    ).slice(0, 3);
+    // 1. Same vehicle type (Cars for Cars, SUVs for SUVs, Bikes for Bikes)
+    const sameVehicle = TYRES_DATA.filter(
+      (t) => t.id !== tyre.id && t.vehicleType === tyre.vehicleType
+    );
+
+    // Sort: Exact category match first, then by rating
+    sameVehicle.sort((a, b) => {
+      const aMatch = a.category === tyre.category ? 1 : 0;
+      const bMatch = b.category === tyre.category ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+      return (b.rating || 0) - (a.rating || 0);
+    });
+
+    const results = [...sameVehicle];
+
+    // 2. If fewer than 3, backfill with compatible vehicle types (keeping bikes separate from 4-wheelers)
+    if (results.length < 3) {
+      const remaining = TYRES_DATA.filter(
+        (t) => t.id !== tyre.id && !results.some((r) => r.id === t.id)
+      ).sort((a, b) => {
+        const aIsBike = a.vehicleType === "Bikes";
+        const bIsBike = b.vehicleType === "Bikes";
+        const curIsBike = tyre.vehicleType === "Bikes";
+        if (curIsBike) {
+          if (aIsBike && !bIsBike) return -1;
+          if (!aIsBike && bIsBike) return 1;
+        } else {
+          if (!aIsBike && bIsBike) return -1;
+          if (aIsBike && !bIsBike) return 1;
+        }
+        const aCat = a.category === tyre.category ? 1 : 0;
+        const bCat = b.category === tyre.category ? 1 : 0;
+        if (aCat !== bCat) return bCat - aCat;
+        return (b.rating || 0) - (a.rating || 0);
+      });
+
+      for (const rem of remaining) {
+        if (results.length >= 3) break;
+        results.push(rem);
+      }
+    }
+
+    return results.slice(0, 3);
   }, [tyre.id, tyre.vehicleType, tyre.category]);
 
   const handleMouseMove = (e) => {
@@ -75,10 +115,10 @@ export default function ProductDetailPage({
       }}
     >
       <div className="container">
-        {/* TOP BREADCRUMB / BACK BAR */}
+        {/* TOP BREADCRUMB / BACK BAR (Mobile only, hidden on Desktop view) */}
         <div
+          className="pdp-top-bar"
           style={{
-            display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
@@ -694,13 +734,7 @@ export default function ProductDetailPage({
               </button>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: "18px",
-              }}
-            >
+            <div className="similar-tyres-grid">
               {similarTyres.map((simTyre) => (
                 <div
                   key={simTyre.id}
@@ -712,63 +746,88 @@ export default function ProductDetailPage({
                   }}
                   style={{
                     background: "#ffffff",
-                    borderRadius: "18px",
+                    borderRadius: "20px",
                     border: "1px solid #e2e8f0",
-                    padding: "20px",
+                    padding: "22px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     cursor: "pointer",
-                    boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)",
+                    boxShadow: "0 6px 20px rgba(15, 23, 42, 0.04)",
                     transition: "var(--transition-smooth)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = "#cbd5e1";
-                    e.currentTarget.style.transform = "translateY(-3px)";
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                    e.currentTarget.style.boxShadow = "0 14px 30px rgba(15, 23, 42, 0.08)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = "#e2e8f0";
                     e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(15, 23, 42, 0.04)";
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>
-                      {simTyre.brand}
-                    </span>
-                    <span style={{ fontSize: "0.68rem", fontWeight: "700", background: "#f1f5f9", padding: "3px 10px", borderRadius: "9999px", color: "#334155" }}>
-                      {simTyre.category}
-                    </span>
-                  </div>
-
-                  <div style={{ height: "130px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px" }}>
-                    <img
-                      src={simTyre.image}
-                      alt={simTyre.name}
-                      style={{ maxHeight: "110px", maxWidth: "100%", objectFit: "contain" }}
-                    />
-                  </div>
-
                   <div>
-                    <h4 style={{ fontSize: "1.02rem", fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>
-                      {simTyre.name}
-                    </h4>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px" }}>
-                      <span style={{ fontSize: "1.15rem", fontWeight: "800", color: "#0f172a" }}>
-                        {currency === "USD" ? `$${simTyre.priceUSD}` : `₹${simTyre.priceINR.toLocaleString("en-IN")}`}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                      <span style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        {simTyre.brand}
                       </span>
-                      <span
-                        style={{
-                          fontSize: "0.78rem",
-                          fontWeight: "700",
-                          color: "#ef4444",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        View Details <ChevronRight size={14} />
+                      <span style={{ fontSize: "0.7rem", fontWeight: "700", background: "#f1f5f9", padding: "4px 10px", borderRadius: "9999px", color: "#334155" }}>
+                        {simTyre.category}
                       </span>
                     </div>
+
+                    {/* Studio Tyre Showcase Container */}
+                    <div
+                      style={{
+                        height: "170px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "8px 0 16px 0",
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "14px",
+                        background: "radial-gradient(circle at center, #ffffff 65%, #f8fafc 100%)",
+                      }}
+                    >
+                      <img
+                        src={simTyre.image}
+                        alt={simTyre.name}
+                        style={{
+                          maxHeight: "145px",
+                          maxWidth: "92%",
+                          objectFit: "contain",
+                          mixBlendMode: "multiply",
+                          filter: "drop-shadow(0 10px 16px rgba(15, 23, 42, 0.12))",
+                          transition: "transform 0.3s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                      />
+                    </div>
+
+                    <h4 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", marginBottom: "8px", lineHeight: 1.3 }}>
+                      {simTyre.name}
+                    </h4>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #f1f5f9" }}>
+                    <span style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a" }}>
+                      {currency === "USD" ? `$${simTyre.priceUSD}` : `₹${simTyre.priceINR.toLocaleString("en-IN")}`}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        fontWeight: "700",
+                        color: "#ef4444",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      View Details <ChevronRight size={14} />
+                    </span>
                   </div>
                 </div>
               ))}
