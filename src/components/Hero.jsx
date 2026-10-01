@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRight, Settings, Users, Store, Globe2 } from "lucide-react";
+import { ArrowRight, Settings, Users, Store, Globe2, Award, ShieldCheck } from "lucide-react";
 
 const HERO_SLIDES = [
   {
@@ -32,10 +32,10 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "520px",
+        minHeight: "510px",
         display: "flex",
         alignItems: "center",
-        padding: "26px 0 38px 0",
+        padding: "21px 0 33px 0",
         scrollMarginTop: "90px",
         overflow: "hidden",
         background: "#0f172a",
@@ -109,6 +109,7 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
               boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
             }}
           >
+            <ShieldCheck size={16} color="#ef4444" />
             <span>PREMIUM TYRES FOR A SMOOTHER TOMORROW</span>
           </div>
 
@@ -148,11 +149,11 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
               color: "#334155",
               lineHeight: 1.6,
               marginBottom: "32px",
-              maxWidth: "600px",
+              maxWidth: "620px",
               fontWeight: "500",
             }}
           >
-            Uncompromising grip, superior quiet riding and made for proven durability — for safer roads, longer life and a smoother ride, every time.
+            Backed by over 20 years of trusted automotive legacy — delivering uncompromising grip, superior quiet riding, and proven durability for safer roads every time.
           </p>
 
           {/* Action CTAs */}
@@ -256,13 +257,13 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
                 boxShadow: "0 4px 15px rgba(15, 23, 42, 0.05)",
               }}
             >
-              <Users size={24} color="#ef4444" />
+              <Award size={24} color="#ef4444" />
               <div>
                 <div style={{ fontWeight: "800", fontSize: "1.15rem", color: "#0f172a", lineHeight: 1.1 }}>
-                  85,000+
+                  20+ Years
                 </div>
                 <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600" }}>
-                  Happy Customers
+                  Trusted Legacy
                 </div>
               </div>
             </div>
@@ -310,11 +311,11 @@ export default function Hero({ onExploreClick, onFinderClick, onServicesClick })
                 <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600" }}>
                   Global Brands
                 </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
       {/* Slide Indicators */}
       <div

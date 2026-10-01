@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import FeaturedProducts from "./components/FeaturedProducts";
 import WhyChooseUs from "./components/WhyChooseUs";
+import FounderLegacy from "./components/FounderLegacy";
 import ServicesSection from "./components/ServicesSection";
 import AboutBrand from "./components/AboutBrand";
 import Testimonials from "./components/Testimonials";
@@ -18,15 +19,37 @@ import QuoteModal from "./components/QuoteModal";
 import LoginModal from "./components/LoginModal";
 import SectionReveal from "./components/SectionReveal";
 import BrandSection from "./components/BrandSection";
-import ChatBot from "./components/ChatBot";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminLogin from "./components/admin/AdminLogin";
 import { CheckCircle2, X } from "lucide-react";
 import { TYRES_DATA } from "./data/tyresData";
 
 export default function App() {
-  // Navigation: "home" | "catalog" | "product-detail"
+  // Navigation: "home" | "catalog" | "product-detail" | "admin"
   const [currentPage, setCurrentPage] = useState("home");
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [selectedTyreId, setSelectedTyreId] = useState(TYRES_DATA[0].id);
   const [shouldScrollToProducts, setShouldScrollToProducts] = useState(false);
+
+  // Dynamic Store & Inventory State
+  const [tyresDataList, setTyresDataList] = useState(TYRES_DATA);
+  const [bookingsList, setBookingsList] = useState([
+    { customerName: "Rajesh Sharma", carModel: "Honda City (2022)", serviceName: "4-Wheel Alignment & Balancing", date: "2026-10-02", timeSlot: "11:00 AM", phone: "+91 98220 44556", status: "Confirmed", totalINR: 1850 },
+    { customerName: "Vikramaditya Deshmukh", carModel: "Toyota Fortuner", serviceName: "Run-Flat Tyre Replacement", date: "2026-10-03", timeSlot: "02:30 PM", phone: "+91 94230 11223", status: "Pending", totalINR: 24500 },
+    { customerName: "Amitabh Kulkarni", carModel: "Hyundai Creta", serviceName: "Nitrogen Air Flush & Inspection", date: "2026-10-04", timeSlot: "04:00 PM", phone: "+91 98900 99887", status: "Confirmed", totalINR: 850 },
+  ]);
+  const [quotesList, setQuotesList] = useState([
+    { tyreName: "ApexSport Pro 4S", quantity: 12, email: "fleet@maharashtratravels.com", totalFormatted: "₹2,26,800" },
+    { tyreName: "TerraGrip All-Terrain X", quantity: 8, email: "purchasing@westernsafari.in", totalFormatted: "₹1,27,200" },
+  ]);
+  const [brandsList, setBrandsList] = useState([
+    { id: "yokohama", name: "Yokohama", logo: "/images/YOKOHAMA.png", tagline: "Japan's Premium Tyres", status: "Active" },
+    { id: "mrf", name: "MRF Tyres", logo: "/images/MRF tyres.png", tagline: "India's No.1 Tyre Brand", status: "Active" },
+    { id: "ceat", name: "CEAT", logo: "/images/CEAT tyres.png", tagline: "Confidence for Every Ride", status: "Active" },
+    { id: "goodyear", name: "Goodyear", logo: "/images/Good Year.jpg", tagline: "Global Innovation Leader", status: "Active" },
+    { id: "bridgestone", name: "Bridgestone", logo: "/images/bridgestone.png", tagline: "World's #1 Premium Tyre", status: "Active" },
+    { id: "michelin", name: "Michelin", logo: "/images/mechalin.jpg", tagline: "Performance & Innovation", status: "Active" },
+  ]);
 
   // App settings & interactions
   const [currency, setCurrency] = useState("INR");
@@ -40,6 +63,58 @@ export default function App() {
   const [dealerModalTyre, setDealerModalTyre] = useState(null);
   const [quoteModalTyre, setQuoteModalTyre] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Tyre Inventory CRUD Handlers
+  const handleAddTyre = (newTyre) => {
+    setTyresDataList((prev) => [newTyre, ...prev]);
+  };
+
+  const handleUpdateTyre = (updatedTyre) => {
+    setTyresDataList((prev) =>
+      prev.map((t) => (t.id === updatedTyre.id ? updatedTyre : t))
+    );
+  };
+
+  const handleDeleteTyre = (tyreId) => {
+    setTyresDataList((prev) => prev.filter((t) => t.id !== tyreId));
+  };
+
+  const handleAddBrand = (newBrand) => {
+    setBrandsList((prev) => [...prev, newBrand]);
+  };
+
+  const handleUpdateBrand = (updatedBrand) => {
+    setBrandsList((prev) => prev.map((b) => (b.id === updatedBrand.id ? updatedBrand : b)));
+  };
+
+  const handleDeleteBrand = (brandId) => {
+    setBrandsList((prev) => prev.filter((b) => b.id !== brandId));
+  };
+
+  const handleUpdateBookingStatus = (index, newStatus) => {
+    setBookingsList((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, status: newStatus } : b))
+    );
+  };
+
+  // URL Route Detection for /admin and /admin/login
+  useEffect(() => {
+    const checkRoute = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path.includes("/admin") || hash.includes("#admin")) {
+        setCurrentPage("admin");
+      }
+    };
+
+    checkRoute();
+    window.addEventListener("popstate", checkRoute);
+    window.addEventListener("hashchange", checkRoute);
+    return () => {
+      window.removeEventListener("popstate", checkRoute);
+      window.removeEventListener("hashchange", checkRoute);
+    };
+  }, []);
 
   // Global hotkey Ctrl+K / Cmd+K for search
   useEffect(() => {
@@ -236,6 +311,48 @@ export default function App() {
     }
   };
 
+  if (currentPage === "admin") {
+    if (!isAdminAuthenticated) {
+      return (
+        <AdminLogin
+          onLoginSuccess={() => setIsAdminAuthenticated(true)}
+          onReturnToSite={() => {
+            if (window.history.pushState) {
+              window.history.pushState({}, "", "/");
+            }
+            window.location.hash = "";
+            setCurrentPage("home");
+          }}
+        />
+      );
+    }
+
+    return (
+      <AdminLayout
+        onExitAdmin={() => {
+          setIsAdminAuthenticated(false);
+          if (window.history.pushState) {
+            window.history.pushState({}, "", "/");
+          }
+          window.location.hash = "";
+          setCurrentPage("home");
+        }}
+        tyresData={tyresDataList}
+        onAddTyre={handleAddTyre}
+        onUpdateTyre={handleUpdateTyre}
+        onDeleteTyre={handleDeleteTyre}
+        brandsList={brandsList}
+        onAddBrand={handleAddBrand}
+        onUpdateBrand={handleUpdateBrand}
+        onDeleteBrand={handleDeleteBrand}
+        bookingsList={bookingsList}
+        onUpdateBookingStatus={handleUpdateBookingStatus}
+        quotesList={quotesList}
+        onUpdateQuoteStatus={() => {}}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
       {/* 1. Global Luxury Navbar */}
@@ -245,7 +362,11 @@ export default function App() {
         onNavigateCatalog={handleGoToCatalog}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenFinder={() => scrollToSection("finder")}
+        onOpenBooking={(service) =>
+          setBookingState({ isOpen: true, service: service || null, tyre: null })
+        }
         onOpenLogin={() => setIsLoginOpen(true)}
+        onOpenAdmin={() => setCurrentPage("admin")}
         currency={currency}
         setCurrency={setCurrency}
         wishlistCount={wishlistIds.length}
@@ -261,9 +382,14 @@ export default function App() {
             onFinderClick={() => scrollToSection("finder")}
           />
 
-          {/* Brand Partner Showcase (Directly after Hero) */}
+          {/* 3. 20-Year Founder Legacy (Directly after Hero) */}
           <SectionReveal>
-            <BrandSection />
+            <FounderLegacy />
+          </SectionReveal>
+
+          {/* Brand Partner Showcase */}
+          <SectionReveal>
+            <BrandSection brandsList={brandsList} />
           </SectionReveal>
 
           {/* 4. Featured Products */}
@@ -340,6 +466,7 @@ export default function App() {
       <Footer
         onOpenFinder={() => scrollToSection("finder")}
         onNavigateHome={handleGoToHome}
+        onOpenAdmin={() => setCurrentPage("admin")}
       />
 
       {/* Global Interactive Modals */}
@@ -381,6 +508,15 @@ export default function App() {
           currency={currency}
           onClose={() => setQuoteModalTyre(null)}
           onQuoteSubmitted={(quote) => {
+            setQuotesList((prev) => [
+              {
+                tyreName: quote.tyreName,
+                quantity: quote.quantity,
+                email: quote.email,
+                totalFormatted: quote.totalFormatted,
+              },
+              ...prev,
+            ]);
             showToast(`Official Quote for ${quote.quantity}x ${quote.tyreName} (${quote.totalFormatted}) sent to ${quote.email}`);
           }}
         />
@@ -394,6 +530,19 @@ export default function App() {
             setBookingState({ isOpen: false, service: null, tyre: null })
           }
           onBookingConfirmed={(data) => {
+            setBookingsList((prev) => [
+              {
+                customerName: data.customerName,
+                carModel: data.carModel,
+                serviceName: data.serviceName,
+                date: data.date,
+                timeSlot: data.timeSlot,
+                phone: data.phone || "+91 98765 43210",
+                status: "Pending",
+                totalINR: 1850,
+              },
+              ...prev,
+            ]);
             showToast(
               `Appointment Reserved! ${data.customerName} for ${data.serviceName} on ${data.date} at ${data.timeSlot} (${data.carModel})`
             );
@@ -430,15 +579,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Floating Interactive ChatBot */}
-      <ChatBot
-        onOpenFinder={() => scrollToSection("finder")}
-        onOpenBooking={(service) =>
-          setBookingState({ isOpen: true, service: service || null, tyre: null })
-        }
-        onOpenCatalog={handleGoToCatalog}
-        onOpenContact={() => scrollToSection("contact")}
-      />
     </div>
   );
 }

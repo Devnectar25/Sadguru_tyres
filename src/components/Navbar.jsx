@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Phone, Menu, X, User } from "lucide-react";
+import { Phone, Menu, X, Wrench, MapPin } from "lucide-react";
 
 export default function Navbar({
   onOpenSearch,
   onOpenFinder,
   onOpenLogin,
+  onOpenBooking,
+  onOpenAdmin,
   currency,
   setCurrency,
   currentPage,
@@ -76,7 +78,7 @@ export default function Navbar({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "70px",
+            height: "78px",
           }}
         >
           {/* Logo */}
@@ -89,7 +91,7 @@ export default function Navbar({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              gap: "14px",
               cursor: "pointer",
               transition: "transform 0.2s ease, opacity 0.2s ease",
               userSelect: "none",
@@ -105,15 +107,15 @@ export default function Navbar({
           >
             <div
               style={{
-                width: "46px",
-                height: "46px",
+                width: "58px",
+                height: "58px",
                 borderRadius: "50%",
                 background: "#0f172a",
                 padding: "3px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 0 12px rgba(239, 68, 68, 0.3)",
+                boxShadow: "0 0 14px rgba(239, 68, 68, 0.35)",
                 overflow: "hidden",
                 flexShrink: 0,
               }}
@@ -133,11 +135,11 @@ export default function Navbar({
               <div
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: "1.3rem",
-                  fontWeight: "800",
+                  fontSize: "1.6rem",
+                  fontWeight: "900",
                   letterSpacing: "0.05em",
                   color: "#0f172a",
-                  lineHeight: 1.1,
+                  lineHeight: 1.05,
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
@@ -147,14 +149,15 @@ export default function Navbar({
               </div>
               <div
                 style={{
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.16em",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.18em",
                   color: "#64748b",
                   textTransform: "uppercase",
-                  fontWeight: "600",
+                  fontWeight: "700",
+                  marginTop: "2px",
                 }}
               >
-                TOUGH • PERFORMANCE • TRUST
+                20+ YEARS OF LEGACY
               </div>
             </div>
           </div>
@@ -229,67 +232,77 @@ export default function Navbar({
               gap: "12px",
             }}
           >
-            {/* Phone Button Pill matching reference design */}
+            {/* Google Maps Store Location Link */}
             <a
-              href="tel:1800151100"
+              href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Store Location on Google Maps"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "42px",
+                height: "42px",
+                borderRadius: "50%",
+                background: "#ffffff",
+                border: "1.5px solid #ef4444",
+                color: "#ef4444",
+                transition: "var(--transition-smooth)",
+                cursor: "pointer",
+                flexShrink: 0,
+                boxShadow: "0 2px 10px rgba(239, 68, 68, 0.18)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#ef4444";
+                e.currentTarget.style.color = "#ffffff";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 6px 18px rgba(239, 68, 68, 0.35)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.color = "#ef4444";
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+                e.currentTarget.style.boxShadow = "0 2px 10px rgba(239, 68, 68, 0.18)";
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"/>
+              </svg>
+            </a>
+
+            {/* Book Service Button Pill */}
+            <button
+              onClick={() => onOpenBooking && onOpenBooking()}
               className="desktop-cta"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "9px 20px",
+                padding: "10px 22px",
                 borderRadius: "999px",
-                fontSize: "0.85rem",
+                fontSize: "0.86rem",
                 fontWeight: "700",
-                background: "#0f172a",
+                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
                 color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.2)",
+                boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)",
                 transition: "var(--transition-smooth)",
                 whiteSpace: "nowrap",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#1e293b";
-                e.currentTarget.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#0f172a";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-            >
-              <Phone size={14} fill="#ffffff" color="#ffffff" />
-              <span>1800 15 11 00</span>
-            </a>
-
-            {/* Log In Button */}
-            <button
-              onClick={onOpenLogin}
-              className="desktop-cta"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "9px 18px",
-                borderRadius: "999px",
-                fontSize: "0.85rem",
-                fontWeight: "500",
-                background: "#f1f5f9",
-                border: "1px solid #cbd5e1",
-                color: "#0f172a",
+                border: "none",
                 cursor: "pointer",
-                transition: "var(--transition-smooth)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#e2e8f0";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(239, 68, 68, 0.45)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#f1f5f9";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 68, 68, 0.3)";
               }}
             >
-              <User size={15} />
-              <span>Log In</span>
+              <Wrench size={15} />
+              <span>Book Service</span>
             </button>
-
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -315,7 +328,7 @@ export default function Navbar({
         <div
           style={{
             position: "fixed",
-            top: "62px",
+            top: "78px",
             left: 0,
             right: 0,
             bottom: 0,
@@ -362,30 +375,30 @@ export default function Navbar({
             );
           })}
 
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onOpenLogin();
-            }}
+          <a
+            href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMobileMenuOpen(false)}
             style={{
-              background: "#0f172a",
-              border: "none",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
               borderRadius: "999px",
-              fontSize: "1rem",
-              fontWeight: "500",
-              color: "#ffffff",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+              color: "#ef4444",
               padding: "12px",
-              marginTop: "10px",
-              cursor: "pointer",
+              marginTop: "4px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
+              textDecoration: "none",
             }}
           >
-            <User size={18} />
-            <span>Log In</span>
-          </button>
+            <MapPin size={18} color="#ef4444" />
+            <span>Store Location on Google Maps</span>
+          </a>
 
           <a
             href="tel:1800151100"

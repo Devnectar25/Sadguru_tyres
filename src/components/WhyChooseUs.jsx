@@ -105,7 +105,7 @@ export default function WhyChooseUs() {
     <section
       id="why-choose-us"
       style={{
-        padding: "48px 0",
+        padding: "38px 0",
         position: "relative",
         background: "#ffffff",
         borderTop: "1px solid #e2e8f0",

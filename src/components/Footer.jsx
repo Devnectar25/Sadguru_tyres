@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Phone, Mail, MapPin, ShieldCheck, Check, Send } from "lucide-react";
 
-export default function Footer({ onOpenFinder, onNavigateHome }) {
+export default function Footer({ onOpenFinder, onNavigateHome, onOpenAdmin }) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
@@ -193,10 +193,28 @@ export default function Footer({ onOpenFinder, onNavigateHome }) {
                 <Mail size={15} color="#0f172a" />
                 <span>care@sadgurutyres.com</span>
               </div>
-              <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
-                <MapPin size={15} color="#0f172a" />
-                <span>Mon - Sat 9:00 AM - 8:00 PM</span>
-              </div>
+              <a
+                href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-contact-item"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: "#ef4444",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  width: "fit-content",
+                  transition: "var(--transition-smooth)"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+              >
+                <MapPin size={15} color="#ef4444" />
+                <span>Visit Store on Google Maps</span>
+              </a>
             </div>
 
             {/* Newsletter form */}

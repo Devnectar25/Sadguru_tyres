@@ -1,7 +1,7 @@
 import React from "react";
 
-export default function BrandSection() {
-  const brands = [
+export default function BrandSection({ brandsList }) {
+  const defaultBrands = [
     { id: "yokohama", name: "Yokohama", logo: "/images/YOKOHAMA.png", tagline: "Japan's Premium Tyres" },
     { id: "mrf", name: "MRF Tyres", logo: "/images/MRF tyres.png", tagline: "India's No.1 Tyre Brand" },
     { id: "ceat", name: "CEAT", logo: "/images/CEAT tyres.png", tagline: "Confidence for Every Ride" },
@@ -10,11 +10,13 @@ export default function BrandSection() {
     { id: "michelin", name: "Michelin", logo: "/images/mechalin.jpg", tagline: "Performance & Innovation" },
   ];
 
+  const brands = brandsList && brandsList.length > 0 ? brandsList : defaultBrands;
+
   return (
     <section
       id="brands"
       style={{
-        padding: "36px 0",
+        padding: "8px 0 36px 0",
         background: "#ffffff",
         borderBottom: "1px solid #e2e8f0",
         position: "relative",

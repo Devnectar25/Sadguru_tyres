@@ -5,6 +5,8 @@ import {
   Bot,
   Sparkles,
   ExternalLink,
+  Wrench,
+  CalendarCheck,
 } from "lucide-react";
 
 export default function ChatBot({
@@ -472,15 +474,15 @@ export default function ChatBot({
               pointerEvents: showHoverPopup ? "auto" : "none",
             }}
           >
-            <span style={{ fontSize: "1rem" }}>💬</span>
-            <span>Chat with us</span>
+            <span style={{ fontSize: "1rem" }}>🔧</span>
+            <span>Book a Service</span>
           </div>
 
-          {/* Floating Action Circular Button - White with Red Bot Icon */}
+          {/* Floating Action Circular Button - White with Red Wrench Icon */}
           <button
-            onClick={handleToggle}
-            aria-label="Open SGT Chatbot"
-            title="Chat with SGT Assistant"
+            onClick={() => onOpenBooking && onOpenBooking()}
+            aria-label="Book a Service"
+            title="Book a Tyre Service"
             className="chatbot-fab-btn"
             style={{
               width: "60px",
@@ -508,7 +510,7 @@ export default function ChatBot({
               e.currentTarget.style.boxShadow = "0 10px 28px rgba(15, 23, 42, 0.16), 0 4px 14px rgba(239, 68, 68, 0.25)";
             }}
           >
-            <Bot size={32} strokeWidth={2.3} color="#ef4444" className="chatbot-fab-icon" />
+            <CalendarCheck size={28} strokeWidth={2.2} color="#ef4444" className="chatbot-fab-icon" />
           </button>
         </div>
       )}
