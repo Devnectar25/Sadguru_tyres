@@ -5,7 +5,6 @@ import FeaturedProducts from "./components/FeaturedProducts";
 import WhyChooseUs from "./components/WhyChooseUs";
 import FounderLegacy from "./components/FounderLegacy";
 import ServicesSection from "./components/ServicesSection";
-import AboutBrand from "./components/AboutBrand";
 import Testimonials from "./components/Testimonials";
 import FinalCTA from "./components/FinalCTA";
 import Footer from "./components/Footer";
@@ -23,6 +22,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./components/admin/AdminLogin";
 import { CheckCircle2, X } from "lucide-react";
 import { TYRES_DATA } from "./data/tyresData";
+import { apiService } from "./services/api";
 
 export default function App() {
   // Navigation: "home" | "catalog" | "product-detail" | "admin"
@@ -91,11 +91,42 @@ export default function App() {
     setBrandsList((prev) => prev.filter((b) => b.id !== brandId));
   };
 
-  const handleUpdateBookingStatus = (index, newStatus) => {
+  const handleUpdateBookingStatus = async (index, newStatus) => {
+    const targetBooking = bookingsList[index];
     setBookingsList((prev) =>
       prev.map((b, i) => (i === index ? { ...b, status: newStatus } : b))
     );
+    if (targetBooking && targetBooking.id) {
+      await apiService.updateBookingStatus(targetBooking.id, newStatus);
+    }
   };
+
+  // Fetch live bookings, quotes, tyres, and brands from API on mount
+  useEffect(() => {
+    async function loadApiData() {
+      const [apiBookings, apiQuotes, apiTyres, apiBrands] = await Promise.all([
+        apiService.getBookings(),
+        apiService.getQuotes(),
+        apiService.getTyres(),
+        apiService.getBrands(),
+      ]);
+
+      if (apiBookings && apiBookings.length > 0) {
+        setBookingsList(apiBookings);
+      }
+      if (apiQuotes && apiQuotes.length > 0) {
+        setQuotesList(apiQuotes);
+      }
+      if (apiTyres && apiTyres.length > 0) {
+        setTyresDataList(apiTyres);
+      }
+      if (apiBrands && apiBrands.length > 0) {
+        setBrandsList(apiBrands);
+      }
+    }
+
+    loadApiData();
+  }, []);
 
   // URL Route Detection for /admin and /admin/login
   useEffect(() => {
@@ -507,17 +538,21 @@ export default function App() {
           tyre={quoteModalTyre}
           currency={currency}
           onClose={() => setQuoteModalTyre(null)}
-          onQuoteSubmitted={(quote) => {
-            setQuotesList((prev) => [
-              {
-                tyreName: quote.tyreName,
-                quantity: quote.quantity,
-                email: quote.email,
-                totalFormatted: quote.totalFormatted,
-              },
-              ...prev,
-            ]);
+          onQuoteSubmitted={async (quote) => {
+            const newQuote = {
+              tyreName: quote.tyreName,
+              quantity: quote.quantity,
+              email: quote.email,
+              totalFormatted: quote.totalFormatted,
+            };
+            setQuotesList((prev) => [newQuote, ...prev]);
             showToast(`Official Quote for ${quote.quantity}x ${quote.tyreName} (${quote.totalFormatted}) sent to ${quote.email}`);
+            const res = await apiService.createQuote(newQuote);
+            if (res && res.data) {
+              setQuotesList((prev) =>
+                prev.map((q) => (q === newQuote ? res.data : q))
+              );
+            }
           }}
         />
       )}
@@ -529,23 +564,27 @@ export default function App() {
           onClose={() =>
             setBookingState({ isOpen: false, service: null, tyre: null })
           }
-          onBookingConfirmed={(data) => {
-            setBookingsList((prev) => [
-              {
-                customerName: data.customerName,
-                carModel: data.carModel,
-                serviceName: data.serviceName,
-                date: data.date,
-                timeSlot: data.timeSlot,
-                phone: data.phone || "+91 98765 43210",
-                status: "Pending",
-                totalINR: 1850,
-              },
-              ...prev,
-            ]);
+          onBookingConfirmed={async (data) => {
+            const bookingObj = {
+              customerName: data.customerName,
+              carModel: data.carModel,
+              serviceName: data.serviceName,
+              date: data.date,
+              timeSlot: data.timeSlot,
+              phone: data.phone || "+91 98765 43210",
+              status: "Pending",
+              totalINR: 1850,
+            };
+            setBookingsList((prev) => [bookingObj, ...prev]);
             showToast(
               `Appointment Reserved! ${data.customerName} for ${data.serviceName} on ${data.date} at ${data.timeSlot} (${data.carModel})`
             );
+            const res = await apiService.createBooking(bookingObj);
+            if (res && res.data) {
+              setBookingsList((prev) =>
+                prev.map((b) => (b === bookingObj ? res.data : b))
+              );
+            }
           }}
         />
       )}

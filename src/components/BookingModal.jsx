@@ -27,6 +27,7 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
         date,
         timeSlot,
         carModel: carModel || "Vehicle",
+        phone: phone || "+91 98765 43210",
         tyreName: initialTyre?.name,
       });
       onClose();

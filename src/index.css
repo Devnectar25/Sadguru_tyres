@@ -30,10 +30,57 @@
   --border-hover: #cbd5e1;
   --border-crimson: rgba(239, 68, 68, 0.3);
 
+  /* Centralized Standardized Color System Variables */
+  --color-primary: var(--accent-crimson);
+  --color-secondary: var(--accent-navy);
+  --color-background: var(--bg-dark);
+  --color-surface: var(--bg-surface);
+  --color-text-primary: var(--text-white);
+  --color-text-secondary: var(--text-silver);
+  --color-border: var(--border-glass);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #0284c7;
+  --color-hover: var(--accent-crimson-dark);
+  --color-disabled: #cbd5e1;
+
   /* Unified Typography System (Poppins) */
   --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Poppins', sans-serif;
   --font-body: 'Poppins', sans-serif;
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Border Radii & Design Tokens */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Z-Index Hierarchy */
+  --z-navbar: 100;
+  --z-dropdown: 500;
+  --z-modal: 1000;
+  --z-toast: 2000;
 
   /* Transitions & Shadows */
   --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);

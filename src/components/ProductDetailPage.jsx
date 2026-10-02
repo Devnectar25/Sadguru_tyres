@@ -10,8 +10,6 @@ import {
   ArrowLeft,
   ChevronRight,
   Calendar,
-  ShieldCheck,
-  Check,
 } from "lucide-react";
 
 export default function ProductDetailPage({

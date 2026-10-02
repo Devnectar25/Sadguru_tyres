@@ -52,3 +52,6 @@ Thumbs.db
 .cache
 .eslintcache
 .turbo
+
+# Unwanted Original Asset Drafts
+public/images/originals/
