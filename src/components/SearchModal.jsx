@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { TYRES_DATA } from "../data/tyresData";
 import { Search, X, ChevronRight } from "lucide-react";
 
-export default function SearchModal({ onClose, onSelectTyre, currency }) {
+export default function SearchModal({ onClose, onSelectTyre, currency, tyresData }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
@@ -12,14 +12,19 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
     }
   }, []);
 
-  const results = TYRES_DATA.filter((tyre) => {
+  const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
+
+  const results = sourceData.filter((tyre) => {
+    if (!tyre) return false;
     const q = query.toLowerCase();
+    const sizes = Array.isArray(tyre.availableSizes) ? tyre.availableSizes : [];
     return (
-      tyre.name.toLowerCase().includes(q) ||
-      tyre.category.toLowerCase().includes(q) ||
-      tyre.badge.toLowerCase().includes(q) ||
-      tyre.bestSuitedFor.toLowerCase().includes(q) ||
-      tyre.availableSizes.some((s) => s.toLowerCase().includes(q))
+      (tyre.name || "").toLowerCase().includes(q) ||
+      (tyre.brand || "").toLowerCase().includes(q) ||
+      (tyre.category || "").toLowerCase().includes(q) ||
+      (tyre.badge || "").toLowerCase().includes(q) ||
+      (tyre.tagline || tyre.bestSuitedFor || tyre.description || "").toLowerCase().includes(q) ||
+      sizes.some((s) => (s || "").toLowerCase().includes(q))
     );
   });
 
@@ -100,8 +105,10 @@ export default function SearchModal({ onClose, onSelectTyre, currency }) {
             </div>
           ) : (
             results.map((tyre) => {
+              const priceVal = tyre?.priceINR ?? tyre?.price_inr ?? 12500;
+              const priceUSDVal = tyre?.priceUSD ?? tyre?.price_usd ?? 165;
               const displayPrice =
-                currency === "USD" ? `$${tyre.priceUSD}` : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
+                currency === "USD" ? `$${priceUSDVal}` : `₹${Number(priceVal).toLocaleString("en-IN")}`;
 
               return (
                 <div

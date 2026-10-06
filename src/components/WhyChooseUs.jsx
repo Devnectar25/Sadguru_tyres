@@ -105,7 +105,7 @@ export default function WhyChooseUs() {
     <section
       id="why-choose-us"
       style={{
-        padding: "38px 0",
+        padding: "18px 0 28px 0",
         position: "relative",
         background: "#ffffff",
         borderTop: "1px solid #e2e8f0",
@@ -116,7 +116,7 @@ export default function WhyChooseUs() {
       <div id="about" style={{ position: "absolute", top: 0, scrollMarginTop: "85px" }} />
       <div className="container">
         {/* Header */}
-        <div className="section-header" style={{ marginBottom: "40px" }}>
+        <div className="section-header" style={{ marginBottom: "20px" }}>
           <div className="section-eyebrow">
             WHY CHOOSE US
           </div>

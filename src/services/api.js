@@ -179,4 +179,253 @@ export const apiService = {
       return null;
     }
   },
+
+  // Sub-Admins API
+  async getSubadmins() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/subadmins`);
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async createSubadmin(subadminData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/subadmins`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subadminData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async updateSubadmin(id, subadminData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/subadmins/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subadminData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async deleteSubadmin(id) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/subadmins/${id}`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // Error Monitoring API
+  async getErrors() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/errors`);
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async createErrorLog(errorData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/errors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(errorData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async updateErrorStatus(id, status) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/errors/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async clearResolvedErrors() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/errors/resolved`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async deleteErrorLog(id) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/errors/${id}`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // Analytics API
+  async getAnalytics(period = "30d") {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/analytics?period=${period}`);
+      const json = await res.json();
+      return json.data || null;
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // FAQs API
+  async getFaqs() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/faqs`);
+      const json = await res.json();
+      return json.data || [];
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async createFaq(faqData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/faqs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(faqData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async updateFaq(id, faqData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/faqs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(faqData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async deleteFaq(id) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/faqs/${id}`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // Services API
+  async getServices() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/services`);
+      const json = await res.json();
+      return json.data || [];
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async addService(serviceData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/services`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async updateService(id, serviceData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/services/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async deleteService(id) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/services/${id}`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  // Leads API
+  async getLeads() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leads`);
+      const json = await res.json();
+      return json.data || [];
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async createLead(leadData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leadData),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async updateLeadStatus(id, status) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async deleteLead(id) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leads/${id}`, { method: "DELETE" });
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
 };

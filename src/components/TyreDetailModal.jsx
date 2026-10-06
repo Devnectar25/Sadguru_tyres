@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { X, Star, Check, Calendar } from "lucide-react";
 
 export default function TyreDetailModal({ tyre, onClose, currency, onBookTyre }) {
-  const [selectedSize, setSelectedSize] = useState(tyre.availableSizes[0] || "");
-
   if (!tyre) return null;
 
+  const [selectedSize, setSelectedSize] = useState(tyre?.availableSizes?.[0] || "225/45 R18");
+
+  const priceVal = tyre?.priceINR ?? tyre?.price_inr ?? 12500;
+  const priceUSDVal = tyre?.priceUSD ?? tyre?.price_usd ?? 165;
   const displayPrice =
-    currency === "USD" ? `$${tyre.priceUSD}` : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
+    currency === "USD" ? `$${priceUSDVal}` : `₹${Number(priceVal).toLocaleString("en-IN")}`;
 
   return (
     <div className="modal-overlay" onClick={onClose} onWheel={(e) => e.stopPropagation()}>
@@ -230,7 +232,7 @@ export default function TyreDetailModal({ tyre, onClose, currency, onBookTyre })
                 Available Rim Sizes:
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {tyre.availableSizes.map((sz) => (
+                {(tyre?.availableSizes || []).map((sz) => (
                   <button
                     key={sz}
                     onClick={() => setSelectedSize(sz)}

@@ -6,6 +6,7 @@ export default function FeaturedProducts({
   currency,
   onSelectTyre,
   filteredCategory,
+  tyresData,
 }) {
   const [activeCategory, setActiveCategory] = useState("All");
 
@@ -19,9 +20,11 @@ export default function FeaturedProducts({
     "Winter / Extreme Cold",
   ];
 
-  const filteredTyres = TYRES_DATA.filter((tyre) => {
+  const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
+
+  const filteredTyres = sourceData.filter((tyre) => {
     if (activeCategory === "All") return true;
-    return tyre.category === activeCategory;
+    return tyre.category === activeCategory || tyre.tyreType === activeCategory;
   });
 
   const displayedTyres = filteredTyres.slice(0, 6);
@@ -124,10 +127,12 @@ export default function FeaturedProducts({
           }}
         >
           {displayedTyres.map((tyre) => {
+            const priceVal = tyre?.priceINR ?? tyre?.price_inr ?? 12500;
+            const priceUSDVal = tyre?.priceUSD ?? tyre?.price_usd ?? 165;
             const displayPrice =
               currency === "USD"
-                ? `$${tyre.priceUSD}`
-                : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
+                ? `$${priceUSDVal}`
+                : `₹${Number(priceVal).toLocaleString("en-IN")}`;
 
             return (
               <div

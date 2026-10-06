@@ -6,12 +6,16 @@ export default function Navbar({
   onOpenFinder,
   onOpenLogin,
   onOpenBooking,
+  onOpenChatBot,
   onOpenAdmin,
   currency,
   setCurrency,
   currentPage,
   onNavigateHome,
   onNavigateCatalog,
+  onNavigateServices,
+  onNavigateAbout,
+  onNavigateContact,
   wishlistCount,
 }) {
   const [scrolled, setScrolled] = useState(false);
@@ -28,32 +32,20 @@ export default function Navbar({
   const handleNav = (target) => {
     setMobileMenuOpen(false);
     if (target === "home") {
-      onNavigateHome();
+      if (onNavigateHome) onNavigateHome();
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      }, 50);
     } else if (target === "tyres" || target === "catalog") {
-      onNavigateCatalog(false);
+      if (onNavigateCatalog) onNavigateCatalog(false);
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      }, 50);
-    } else {
-      const targetId = target === "about" ? "why-choose-us" : target;
-      const doScroll = () => {
-        const el = document.getElementById(targetId) || document.getElementById(target);
-        if (el) {
-          const y = el.getBoundingClientRect().top + window.pageYOffset - 85;
-          window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-        }
-      };
-      if (currentPage !== "home") {
-        onNavigateHome();
-        setTimeout(doScroll, 120);
-      } else {
-        doScroll();
-      }
+    } else if (target === "services") {
+      if (onNavigateServices) onNavigateServices();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    } else if (target === "about") {
+      if (onNavigateAbout) onNavigateAbout();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    } else if (target === "contact") {
+      if (onNavigateContact) onNavigateContact();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
   };
 
@@ -179,7 +171,7 @@ export default function Navbar({
               { id: "contact", label: "Contact Us" },
             ].map((nav) => {
               const isActive =
-                (nav.id === "home" && currentPage === "home") ||
+                (nav.id === currentPage) ||
                 (nav.id === "catalog" && (currentPage === "catalog" || currentPage === "product-detail"));
 
               return (
@@ -271,6 +263,8 @@ export default function Navbar({
               </svg>
             </a>
 
+
+
             {/* Book Service Button Pill */}
             <button
               onClick={() => onOpenBooking && onOpenBooking()}
@@ -301,7 +295,7 @@ export default function Navbar({
               }}
             >
               <Wrench size={15} />
-              <span>Book Service</span>
+              <span>Book Appointment</span>
             </button>
             {/* Mobile Hamburger Toggle */}
             <button
@@ -350,7 +344,7 @@ export default function Navbar({
             { id: "contact", label: "Contact Us" },
           ].map((item) => {
             const isActive =
-              (item.id === "home" && currentPage === "home") ||
+              (item.id === currentPage) ||
               (item.id === "catalog" && (currentPage === "catalog" || currentPage === "product-detail"));
 
             return (

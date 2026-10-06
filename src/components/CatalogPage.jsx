@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { TYRES_DATA } from "../data/tyresData";
-import { Search, Heart, Eye, Star, Car, Truck, Disc, Sparkles, X, RotateCw } from "lucide-react";
+import { Search, Heart, Eye, Star, Car, Truck, Disc, Sparkles, X, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function CatalogPage({
   currency,
@@ -9,6 +9,7 @@ export default function CatalogPage({
   onToggleWishlist,
   onNavigateHome,
   shouldScrollToProducts,
+  tyresData,
 }) {
   const [vehicleType, setVehicleType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,17 +22,21 @@ export default function CatalogPage({
   const [maxPrice, setMaxPrice] = useState(300);
   const [sortBy, setSortBy] = useState("recommended");
 
+  const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
+
   const filteredTyres = useMemo(() => {
-    return TYRES_DATA.filter((tyre) => {
-      if (vehicleType !== "All" && tyre.vehicleType !== vehicleType) return false;
+    return sourceData.filter((tyre) => {
+      if (!tyre) return false;
+      if (vehicleType !== "All" && tyre.vehicleType !== vehicleType && tyre.vehicle_type !== vehicleType) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
+        const sizes = Array.isArray(tyre.availableSizes) ? tyre.availableSizes : [];
         const matches =
-          tyre.name.toLowerCase().includes(q) ||
-          tyre.brand.toLowerCase().includes(q) ||
-          tyre.category.toLowerCase().includes(q) ||
-          tyre.bestSuitedFor.toLowerCase().includes(q) ||
-          tyre.availableSizes.some((s) => s.toLowerCase().includes(q));
+          (tyre.name || "").toLowerCase().includes(q) ||
+          (tyre.brand || "").toLowerCase().includes(q) ||
+          (tyre.category || "").toLowerCase().includes(q) ||
+          (tyre.tagline || tyre.bestSuitedFor || tyre.description || "").toLowerCase().includes(q) ||
+          sizes.some((s) => (s || "").toLowerCase().includes(q));
         if (!matches) return false;
       }
       if (selectedBrand !== "All" && tyre.brand !== selectedBrand) return false;
@@ -40,11 +45,13 @@ export default function CatalogPage({
       if (selectedProfile !== "All" && tyre.profile !== selectedProfile) return false;
       if (selectedRimSize !== "All" && tyre.rimSize !== selectedRimSize) return false;
       if (selectedPerformance !== "All" && tyre.performanceLevel !== selectedPerformance) return false;
-      if (tyre.priceUSD > maxPrice) return false;
+      if ((tyre.priceUSD || 165) > maxPrice) return false;
       return true;
     }).sort((a, b) => {
-      if (sortBy === "price-low") return a.priceUSD - b.priceUSD;
-      if (sortBy === "price-high") return b.priceUSD - a.priceUSD;
+      const aPrice = a?.priceUSD || 165;
+      const bPrice = b?.priceUSD || 165;
+      if (sortBy === "price-low") return aPrice - bPrice;
+      if (sortBy === "price-high") return bPrice - aPrice;
       if (sortBy === "newest") return new Date(b.dateAdded) - new Date(a.dateAdded);
       return b.rating * b.reviewsCount - a.rating * a.reviewsCount;
     });
@@ -60,6 +67,20 @@ export default function CatalogPage({
     maxPrice,
     sortBy,
   ]);
+
+  // 10 Products Per Page Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vehicleType, searchQuery, selectedBrand, selectedTyreType, selectedWidth, selectedProfile, selectedRimSize, selectedPerformance, maxPrice, sortBy]);
+
+  const totalPages = Math.ceil(filteredTyres.length / ITEMS_PER_PAGE) || 1;
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedTyres = useMemo(() => {
+    return filteredTyres.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE);
+  }, [filteredTyres, activePage]);
 
   const handleResetFilters = () => {
     setVehicleType("All");
@@ -393,12 +414,14 @@ export default function CatalogPage({
                 gap: "28px",
               }}
             >
-              {filteredTyres.map((tyre) => {
+              {paginatedTyres.map((tyre) => {
                 const isWishlisted = wishlistIds.includes(tyre.id);
+                const priceVal = tyre?.priceINR ?? tyre?.price_inr ?? 12500;
+                const priceUSDVal = tyre?.priceUSD ?? tyre?.price_usd ?? 165;
                 const displayPrice =
                   currency === "USD"
-                    ? `$${tyre.priceUSD}`
-                    : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
+                    ? `$${priceUSDVal}`
+                    : `₹${Number(priceVal).toLocaleString("en-IN")}`;
 
                 return (
                   <div
@@ -616,6 +639,95 @@ export default function CatalogPage({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pagination Controls - 10 Products Per Page */}
+          {filteredTyres.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "20px 24px",
+                background: "#ffffff",
+                borderRadius: "18px",
+                border: "1px solid #e2e8f0",
+                marginTop: "32px",
+                boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)",
+                flexWrap: "wrap",
+                gap: "16px",
+              }}
+            >
+              <div style={{ fontSize: "0.88rem", color: "#64748b", fontWeight: "500" }}>
+                Showing <strong style={{ color: "#0f172a" }}>{(activePage - 1) * ITEMS_PER_PAGE + 1}</strong> to{" "}
+                <strong style={{ color: "#0f172a" }}>{Math.min(activePage * ITEMS_PER_PAGE, filteredTyres.length)}</strong> of{" "}
+                <strong style={{ color: "#0f172a" }}>{filteredTyres.length}</strong> products
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  disabled={activePage <= 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  style={{
+                    padding: "9px 16px",
+                    borderRadius: "9999px",
+                    border: "1px solid #cbd5e1",
+                    background: activePage <= 1 ? "#f1f5f9" : "#ffffff",
+                    color: activePage <= 1 ? "#94a3b8" : "#0f172a",
+                    cursor: activePage <= 1 ? "not-allowed" : "pointer",
+                    fontWeight: "700",
+                    fontSize: "0.84rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <ChevronLeft size={16} /> Previous
+                </button>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        border: pageNum === activePage ? "none" : "1px solid #cbd5e1",
+                        background: pageNum === activePage ? "linear-gradient(135deg, #ef4444, #dc2626)" : "#ffffff",
+                        color: pageNum === activePage ? "#ffffff" : "#0f172a",
+                        fontWeight: "800",
+                        fontSize: "0.85rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  disabled={activePage >= totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  style={{
+                    padding: "9px 16px",
+                    borderRadius: "9999px",
+                    border: "1px solid #cbd5e1",
+                    background: activePage >= totalPages ? "#f1f5f9" : "#ffffff",
+                    color: activePage >= totalPages ? "#94a3b8" : "#0f172a",
+                    cursor: activePage >= totalPages ? "not-allowed" : "pointer",
+                    fontWeight: "700",
+                    fontSize: "0.84rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  Next <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           )}
         </main>

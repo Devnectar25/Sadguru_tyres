@@ -23,21 +23,27 @@ export default function ProductDetailPage({
   onBackToCatalog,
   onNavigateHome,
   onSelectTyre,
+  tyresData,
 }) {
-  const tyre = TYRES_DATA.find((t) => t.id === tyreId) || TYRES_DATA[0];
+  const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
+  const tyre = sourceData.find((t) => t?.id === tyreId) || sourceData[0] || TYRES_DATA[0];
+
+  const displayGallery = (tyre.image2 || tyre.image3)
+    ? [tyre.image, tyre.image2, tyre.image3].filter(Boolean)
+    : (tyre.gallery?.length > 0 ? tyre.gallery : [tyre.image].filter(Boolean));
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [is360Mode, setIs360Mode] = useState(false);
-  const [isSpinning, setIsSpinning] = useState(true);
-  const [selectedSize, setSelectedSize] = useState(tyre.availableSizes[0] || "");
+  const [selectedSize, setSelectedSize] = useState(tyre?.availableSizes?.[0] || "225/45 R18");
   const [activeTab, setActiveTab] = useState("overview");
 
   const [isZooming, setIsZooming] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const imageContainerRef = useRef(null);
 
+  const priceVal = tyre?.priceINR ?? tyre?.price_inr ?? 12500;
+  const priceUSDVal = tyre?.priceUSD ?? tyre?.price_usd ?? 165;
   const displayPrice =
-    currency === "USD" ? `$${tyre.priceUSD}` : `₹${tyre.priceINR.toLocaleString("en-IN")}`;
+    currency === "USD" ? `$${priceUSDVal}` : `₹${Number(priceVal).toLocaleString("en-IN")}`;
 
   const isWishlisted = wishlistIds.includes(tyre.id);
 
@@ -109,7 +115,7 @@ export default function ProductDetailPage({
         minHeight: "100vh",
         background: "#f8fafc",
         paddingTop: "20px",
-        paddingBottom: "80px",
+        paddingBottom: "20px",
       }}
     >
       <div className="container">
@@ -199,9 +205,6 @@ export default function ProductDetailPage({
               onMouseLeave={() => setIsZooming(false)}
               onMouseMove={handleMouseMove}
               className="product-image-stage"
-              style={{
-                cursor: is360Mode ? "grab" : "crosshair",
-              }}
             >
               {/* Image Stage Floating Control Bar (Never overlaps on mobile) */}
               <div
@@ -236,100 +239,31 @@ export default function ProductDetailPage({
                     {tyre.badge}
                   </span>
                 </div>
-
-                <button
-                  onClick={() => setIs360Mode(!is360Mode)}
-                  style={{
-                    pointerEvents: "auto",
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "6px 14px",
-                    borderRadius: "9999px",
-                    background: is360Mode ? "#ef4444" : "#ffffff",
-                    border: is360Mode ? "none" : "1px solid #cbd5e1",
-                    color: is360Mode ? "#ffffff" : "#0f172a",
-                    fontSize: "0.76rem",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    transition: "var(--transition-smooth)",
-                    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)",
-                  }}
-                >
-                  <RotateCw size={13} className={is360Mode ? "rotate-anim" : ""} />
-                  {is360Mode ? "Exit Studio" : "360° Studio"}
-                </button>
               </div>
 
-              {is360Mode ? (
-                <div style={{ textAlign: "center", width: "100%", marginTop: "20px" }}>
-                  <div
-                    style={{
-                      height: "260px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <img
-                      src={tyre.gallery[activeImageIndex] || tyre.image}
-                      alt={tyre.name}
-                      style={{
-                        maxHeight: "220px",
-                        maxWidth: "220px",
-                        objectFit: "contain",
-                        filter: "drop-shadow(0 20px 30px rgba(15, 23, 42, 0.2))",
-                        animation: isSpinning ? "tyreWheelSpin 3s linear infinite" : "none",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginTop: "12px" }}>
-                    <button
-                      onClick={() => setIsSpinning(!isSpinning)}
-                      style={{
-                        padding: "8px 20px",
-                        borderRadius: "9999px",
-                        background: "#0f172a",
-                        color: "#ffffff",
-                        fontSize: "0.82rem",
-                        fontWeight: "700",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {isSpinning ? "Pause Spin" : "Auto Spin"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <img
-                  src={tyre.gallery[activeImageIndex] || tyre.image}
-                  alt={tyre.name}
-                  style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    objectFit: "contain",
-                    filter: "drop-shadow(0 20px 30px rgba(15, 23, 42, 0.18))",
-                    transform: isZooming ? "scale(1.18)" : "scale(1)",
-                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                    transition: isZooming ? "transform 0.1s ease-out" : "transform 0.3s ease-out",
-                  }}
-                />
-              )}
+              <img
+                src={displayGallery[activeImageIndex] || tyre.image}
+                alt={tyre.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  transform: isZooming ? "scale(1.18)" : "scale(1)",
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                  transition: isZooming ? "transform 0.1s ease-out" : "transform 0.3s ease-out",
+                }}
+              />
             </div>
 
             {/* Thumbnail Nav */}
             <div className="product-thumbnails-grid">
-              {tyre.gallery.map((imgUrl, idx) => {
+              {displayGallery.map((imgUrl, idx) => {
                 const isSelected = activeImageIndex === idx;
                 return (
                   <button
                     key={idx}
                     onClick={() => {
                       setActiveImageIndex(idx);
-                      setIs360Mode(false);
                     }}
                     style={{
                       height: "76px",
@@ -511,29 +445,6 @@ export default function ProductDetailPage({
 
             {/* Responsive Action Buttons */}
             <div className="product-action-buttons">
-              <button
-                onClick={() => onOpenDealerModal(tyre)}
-                style={{
-                  flex: "1 1 200px",
-                  padding: "15px 22px",
-                  borderRadius: "9999px",
-                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                  color: "#ffffff",
-                  fontSize: "0.92rem",
-                  fontWeight: "700",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  boxShadow: "0 8px 25px rgba(239, 68, 68, 0.35)",
-                  transition: "var(--transition-smooth)",
-                }}
-              >
-                <Navigation size={18} />
-                Find Dealer & Book Bay
-              </button>
 
               {onOpenBookingModal && (
                 <button
@@ -603,7 +514,6 @@ export default function ProductDetailPage({
           >
             {[
               { id: "overview", label: "Product Overview" },
-              { id: "specs", label: "Engineering Specifications" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -657,45 +567,11 @@ export default function ProductDetailPage({
             </div>
           )}
 
-          {activeTab === "specs" && (
-            <div>
-              <h3 style={{ fontSize: "1.4rem", color: "#0f172a", marginBottom: "18px", fontWeight: "800" }}>
-                Technical & Homologation Specs
-              </h3>
-              <div className="product-specs-grid">
-                {[
-                  { label: "Wet Grip Label", val: `Class ${tyre.specs.wetGrip}` },
-                  { label: "Fuel Efficiency Grade", val: `Class ${tyre.specs.fuelEfficiency}` },
-                  { label: "Acoustic Noise", val: tyre.specs.noiseLevel },
-                  { label: "Speed Rating", val: tyre.specs.speedRating },
-                  { label: "Treadwear Rating", val: tyre.specs.treadwear },
-                  { label: "Manufacturer Warranty", val: tyre.specs.warranty },
-                ].map((row, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "16px",
-                      background: "#f8fafc",
-                      borderRadius: "14px",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  >
-                    <div style={{ fontSize: "0.72rem", color: "#94a3b8", textTransform: "uppercase", fontWeight: "700" }}>
-                      {row.label}
-                    </div>
-                    <div style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", marginTop: "4px" }}>
-                      {row.val}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
         </div>
 
-        {/* SIMILAR / RECOMMENDED TYRES SECTION */}
         {similarTyres.length > 0 && (
-          <div style={{ marginTop: "16px", marginBottom: "30px" }}>
+          <div style={{ marginTop: "16px", marginBottom: "0px" }}>
             <div
               style={{
                 display: "flex",
@@ -786,22 +662,21 @@ export default function ProductDetailPage({
                         position: "relative",
                         overflow: "hidden",
                         borderRadius: "14px",
-                        background: "radial-gradient(circle at center, #ffffff 65%, #f8fafc 100%)",
+                        background: "#ffffff",
                       }}
                     >
                       <img
                         src={simTyre.image}
                         alt={simTyre.name}
                         style={{
-                          maxHeight: "145px",
-                          maxWidth: "92%",
+                          width: "100%",
+                          height: "100%",
                           objectFit: "contain",
-                          mixBlendMode: "multiply",
-                          filter: "drop-shadow(0 10px 16px rgba(15, 23, 42, 0.12))",
-                          transition: "transform 0.3s ease",
+                          transform: "scale(1.05)",
+                          transition: "transform 0.4s ease-out",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
                       />
                     </div>
 
@@ -812,7 +687,7 @@ export default function ProductDetailPage({
 
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #f1f5f9" }}>
                     <span style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a" }}>
-                      {currency === "USD" ? `$${simTyre.priceUSD}` : `₹${simTyre.priceINR.toLocaleString("en-IN")}`}
+                      {currency === "USD" ? `$${simTyre?.priceUSD ?? simTyre?.price_usd ?? 165}` : `₹${Number(simTyre?.priceINR ?? simTyre?.price_inr ?? 12500).toLocaleString("en-IN")}`}
                     </span>
                     <span
                       style={{
