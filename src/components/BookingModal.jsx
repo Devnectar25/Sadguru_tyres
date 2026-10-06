@@ -13,8 +13,45 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
   const [timeSlot, setTimeSlot] = useState("10:30 AM");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [phoneError, setPhoneError] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  const validatePhone = (val) => {
+    const digitsOnly = (val || "").replace(/\D/g, "");
+    if (!digitsOnly) {
+      return "Phone number is required";
+    }
+    if (digitsOnly.length < 10) {
+      return `Please enter a 10-digit mobile number (${digitsOnly.length}/10 digits)`;
+    }
+    if (!/^[6-9]/.test(digitsOnly)) {
+      return "Mobile number must start with 6, 7, 8, or 9";
+    }
+    return "";
+  };
+
+  const handlePhoneChange = (e) => {
+    const clean = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setPhone(clean);
+    if (phoneTouched) {
+      setPhoneError(validatePhone(clean));
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    setPhoneTouched(true);
+    setPhoneError(validatePhone(phone));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setPhoneTouched(true);
+    const err = validatePhone(phone);
+    if (err) {
+      setPhoneError(err);
+      return;
+    }
+    setPhoneError("");
     setIsSubmitting(true);
 
     setTimeout(() => {
@@ -267,29 +304,41 @@ export default function BookingModal({ initialService, initialTyre, onClose, onB
 
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", color: "#0f172a", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
-                Phone Number
+                Phone Number *
               </label>
               <div style={{ position: "relative" }}>
                 <input
                   type="tel"
                   required
-                  placeholder="+91 98000 00000"
+                  maxLength={10}
+                  placeholder="e.g. 9822012345"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
+                  onBlur={handlePhoneBlur}
                   style={{
                     width: "100%",
                     padding: "12px 14px 12px 38px",
                     borderRadius: "12px",
                     background: "#f8fafc",
-                    border: "1px solid #cbd5e1",
+                    border: phoneError ? "2px solid #ef4444" : (phoneTouched && !phoneError && phone ? "2px solid #22c55e" : "1px solid #cbd5e1"),
                     color: "#0f172a",
                     fontSize: "0.92rem",
                     fontWeight: "600",
                     outline: "none",
                   }}
                 />
-                <Phone size={16} color="#64748b" style={{ position: "absolute", left: "14px", top: "14px" }} />
+                <Phone size={16} color={phoneError ? "#ef4444" : "#64748b"} style={{ position: "absolute", left: "14px", top: "14px" }} />
+                {phoneTouched && !phoneError && phone && (
+                  <span style={{ position: "absolute", right: "14px", top: "12px", color: "#22c55e", fontWeight: "800", fontSize: "0.85rem" }}>
+                    ✓
+                  </span>
+                )}
               </div>
+              {phoneError && (
+                <div style={{ fontSize: "0.76rem", color: "#ef4444", fontWeight: "700", marginTop: "4px" }}>
+                  ⚠️ {phoneError}
+                </div>
+              )}
             </div>
           </div>
 

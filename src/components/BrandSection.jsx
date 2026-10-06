@@ -5,7 +5,7 @@ export default function BrandSection({ brandsList }) {
     { id: "yokohama", name: "Yokohama", logo: "/images/YOKOHAMA.png", tagline: "Japan's Premium Tyres" },
     { id: "mrf", name: "MRF Tyres", logo: "/images/MRF tyres.png", tagline: "India's No.1 Tyre Brand" },
     { id: "ceat", name: "CEAT", logo: "/images/CEAT tyres.png", tagline: "Confidence for Every Ride" },
-    { id: "goodyear", name: "Goodyear", logo: "/images/Good Year.jpg", tagline: "Global Innovation Leader" },
+    { id: "goodyear", name: "Goodyear", logo: "/images/goodyear.png", tagline: "Global Innovation Leader" },
     { id: "bridgestone", name: "Bridgestone", logo: "/images/bridgestone.png", tagline: "World's #1 Premium Tyre" },
     { id: "michelin", name: "Michelin", logo: "/images/mechalin.jpg", tagline: "Performance & Innovation" },
   ];

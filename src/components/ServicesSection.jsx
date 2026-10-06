@@ -1,27 +1,28 @@
 import React from "react";
-import { SERVICES_DATA } from "../data/servicesData";
+
 import { Check, Cpu, ArrowRight } from "lucide-react";
 
-export default function ServicesSection({ onBookService }) {
+export default function ServicesSection({ servicesList = [], onBookService }) {
 
   return (
     <section
       id="services"
       style={{
-        padding: "30px 0",
+        padding: "28px 0 45px 0",
         position: "relative",
-        background: "#f8fafc",
+        background: "#ffffff",
+        color: "#0f172a",
         scrollMarginTop: "85px",
       }}
     >
       <div className="container">
         {/* Section Header */}
-        <div className="section-header" style={{ marginBottom: "26px" }}>
-          <div className="section-eyebrow">
+        <div className="section-header" style={{ marginBottom: "20px", textAlign: "center", margin: "0 auto 20px auto", maxWidth: "720px" }}>
+          <div className="section-eyebrow" style={{ color: "#ffffff", background: "#000000", fontWeight: "800", letterSpacing: "0.06em" }}>
             24/7 SUPPORT & INSTALLATION
           </div>
-          <h2>Specialized Tyre & Wheel Services</h2>
-          <p>
+          <h2 style={{ color: "#0f172a", fontSize: "2.2rem", fontWeight: "900", textAlign: "center" }}>Specialized Tyre & Wheel Services</h2>
+          <p style={{ color: "#64748b", maxWidth: "650px", margin: "8px auto 0 auto", textAlign: "center" }}>
             Equipped with 3D laser alignment and modern touchless tools to deliver premium service for your vehicle.
           </p>
         </div>
@@ -34,7 +35,7 @@ export default function ServicesSection({ onBookService }) {
             gap: "24px",
           }}
         >
-          {SERVICES_DATA.slice(0, 3).map((service) => {
+          {(servicesList && servicesList.length > 0 ? servicesList : []).slice(0, 3).map((service) => {
             return (
               <div
                 key={service.id}
@@ -115,7 +116,7 @@ export default function ServicesSection({ onBookService }) {
                       border: "1px solid #e2e8f0",
                     }}
                   >
-                    <span>{service.duration}</span>
+                    <span>{service.duration || "30 Mins"}</span>
                   </div>
                 </div>
 
@@ -130,7 +131,7 @@ export default function ServicesSection({ onBookService }) {
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  {service.title}
+                  {service.title || service.name}
                 </h3>
 
                 {/* Description */}
@@ -142,7 +143,7 @@ export default function ServicesSection({ onBookService }) {
                     marginBottom: "10px",
                   }}
                 >
-                  {service.shortDesc}
+                  {service.shortDesc || service.description}
                 </p>
 
                 {/* Equipment Station Tag */}
@@ -161,7 +162,7 @@ export default function ServicesSection({ onBookService }) {
                 >
                   <Cpu size={13} color="#ef4444" style={{ flexShrink: 0 }} />
                   <span style={{ color: "#64748b", fontWeight: "600" }}>Station:</span>
-                  <span style={{ color: "#0f172a", fontWeight: "700" }}>{service.equipment}</span>
+                  <span style={{ color: "#0f172a", fontWeight: "700" }}>{service.equipment || "Standard Workshop Equipment"}</span>
                 </div>
 
                 {/* Key Benefits List with Styled Check Badges */}
@@ -173,7 +174,7 @@ export default function ServicesSection({ onBookService }) {
                     marginBottom: "18px",
                   }}
                 >
-                  {service.benefits.slice(0, 3).map((benefit, i) => (
+                  {(service.benefits || []).slice(0, 3).map((benefit, i) => (
                     <div
                       key={i}
                       style={{
@@ -230,7 +231,7 @@ export default function ServicesSection({ onBookService }) {
                       Starting Rate
                     </div>
                     <div style={{ fontSize: "1.08rem", fontWeight: "800", color: "#0f172a" }}>
-                      {service.price}
+                      {service.price || (service.priceINR ? `₹ ${service.priceINR.toLocaleString("en-IN")}` : (service.price_inr ? `₹ ${service.price_inr.toLocaleString("en-IN")}` : "Free"))}
                     </div>
                   </div>
 

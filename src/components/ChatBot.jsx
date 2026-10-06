@@ -10,12 +10,16 @@ import {
 } from "lucide-react";
 
 export default function ChatBot({
+  isOpen: externalIsOpen,
+  onToggle: externalOnToggle,
   onOpenFinder,
   onOpenBooking,
   onOpenCatalog,
   onOpenContact,
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+
   const [showHoverPopup, setShowHoverPopup] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -216,7 +220,11 @@ export default function ChatBot({
   };
 
   const handleClose = () => {
-    setIsOpen(false);
+    if (externalOnToggle) {
+      externalOnToggle(false);
+    } else {
+      setInternalIsOpen(false);
+    }
     handleMouseLeave();
   };
 
@@ -225,7 +233,11 @@ export default function ChatBot({
       handleClose();
     } else {
       handleMouseLeave();
-      setIsOpen(true);
+      if (externalOnToggle) {
+        externalOnToggle(true);
+      } else {
+        setInternalIsOpen(true);
+      }
     }
   };
 
@@ -430,7 +442,7 @@ export default function ChatBot({
 
   return (
     <>
-      {/* Floating Action Button & Hover Tooltip - Hidden when chatbot is open */}
+      {/* Floating Action Buttons Container & Hover Tooltip - Hidden when chatbot is open */}
       {!isOpen && (
         <div
           className="chatbot-fab-container"
@@ -438,80 +450,92 @@ export default function ChatBot({
           onMouseLeave={handleMouseLeave}
           style={{
             position: "fixed",
-            bottom: "13px",
-            right: "9px",
+            bottom: "16px",
+            right: "16px",
             zIndex: 995,
             display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: "10px",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: "12px",
           }}
         >
-          {/* Tooltip / Popup - Opens on hover on the LEFT side of the bot, disappears in 3 sec */}
-          <div
-            className="chatbot-tooltip-popup"
-            onClick={handleToggle}
-            role="button"
-            tabIndex={0}
-            style={{
-              background: "#0f172a",
-              color: "#ffffff",
-              padding: "9px 16px",
-              borderRadius: "14px",
-              fontSize: "0.85rem",
-              fontWeight: "600",
-              boxShadow: "0 10px 25px rgba(15, 23, 42, 0.25)",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              cursor: "pointer",
-              border: "1px solid rgba(239, 68, 68, 0.4)",
-              userSelect: "none",
-              whiteSpace: "nowrap",
-              transition: "opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-              opacity: showHoverPopup ? 1 : 0,
-              transform: showHoverPopup ? "translateX(0)" : "translateX(8px)",
-              pointerEvents: showHoverPopup ? "auto" : "none",
-            }}
-          >
-            <span style={{ fontSize: "1rem" }}>🔧</span>
-            <span>Book a Service</span>
-          </div>
 
-          {/* Floating Action Circular Button - White with Red Wrench Icon */}
-          <button
-            onClick={() => onOpenBooking && onOpenBooking()}
-            aria-label="Book a Service"
-            title="Book a Tyre Service"
-            className="chatbot-fab-btn"
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "50%",
-              background: "#ffffff",
-              border: "2.5px solid #ef4444",
-              color: "#ef4444",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.16), 0 4px 14px rgba(239, 68, 68, 0.25)",
-              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-              position: "relative",
-              outline: "none",
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.08)";
-              e.currentTarget.style.boxShadow = "0 12px 32px rgba(239, 68, 68, 0.35), 0 4px 16px rgba(15, 23, 42, 0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 10px 28px rgba(15, 23, 42, 0.16), 0 4px 14px rgba(239, 68, 68, 0.25)";
-            }}
-          >
-            <CalendarCheck size={28} strokeWidth={2.2} color="#ef4444" className="chatbot-fab-icon" />
-          </button>
+          {/* Assistant Chatbot Avatar Launcher Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* Tooltip / Popup */}
+            <div
+              className="chatbot-tooltip-popup"
+              onClick={handleToggle}
+              role="button"
+              tabIndex={0}
+              style={{
+                background: "#0f172a",
+                color: "#ffffff",
+                padding: "9px 16px",
+                borderRadius: "14px",
+                fontSize: "0.85rem",
+                fontWeight: "600",
+                boxShadow: "0 10px 25px rgba(15, 23, 42, 0.25)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
+                userSelect: "none",
+                whiteSpace: "nowrap",
+                transition: "opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                opacity: showHoverPopup ? 1 : 0,
+                transform: showHoverPopup ? "translateX(0)" : "translateX(8px)",
+                pointerEvents: showHoverPopup ? "auto" : "none",
+              }}
+            >
+              <Sparkles size={16} color="#ef4444" />
+              <span>Ask SGT Concierge</span>
+            </div>
+
+            {/* Circular Avatar Chatbot Button */}
+            <button
+              onClick={handleToggle}
+              aria-label="Ask SGT Assistant"
+              title="Chat with SGT Assistant"
+              className="chatbot-fab-btn"
+              style={{
+                width: "66px",
+                height: "66px",
+                borderRadius: "50%",
+                padding: 0,
+                overflow: "hidden",
+                border: "3px solid #ef4444",
+                background: "#ffffff",
+                cursor: "pointer",
+                boxShadow: "0 10px 28px rgba(239, 68, 68, 0.45), 0 4px 14px rgba(15, 23, 42, 0.25)",
+                transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                position: "relative",
+                outline: "none",
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.08)";
+                e.currentTarget.style.boxShadow = "0 14px 35px rgba(239, 68, 68, 0.6), 0 6px 18px rgba(15, 23, 42, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "0 10px 28px rgba(239, 68, 68, 0.45), 0 4px 14px rgba(15, 23, 42, 0.25)";
+              }}
+            >
+              <img
+                src="/images/chatbot_avatar.jpg"
+                alt="SGT Assistant Avatar"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+
+            </button>
+          </div>
         </div>
       )}
 
@@ -557,18 +581,20 @@ export default function ChatBot({
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div
                 style={{
-                  width: "38px",
-                  height: "38px",
+                  width: "42px",
+                  height: "42px",
                   borderRadius: "50%",
-                  background: "#ef4444",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#ffffff",
+                  border: "2px solid #ef4444",
+                  overflow: "hidden",
                   boxShadow: "0 0 10px rgba(239, 68, 68, 0.5)",
+                  flexShrink: 0,
                 }}
               >
-                <Bot size={20} />
+                <img
+                  src="/images/chatbot_avatar.jpg"
+                  alt="SGT Concierge"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
               </div>
               <div>
                 <div
@@ -581,8 +607,11 @@ export default function ChatBot({
                     gap: "6px",
                   }}
                 >
-                  SGT Assistant
+                  SGT Concierge
                   <Sparkles size={14} color="#f87171" />
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#22c55e", fontWeight: "600" }}>
+                  ● Online | AI Tyre Specialist
                 </div>
               </div>
             </div>
