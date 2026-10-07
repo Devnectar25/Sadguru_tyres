@@ -3,6 +3,13 @@ import React from "react";
 import { Check, Cpu, ArrowRight } from "lucide-react";
 
 export default function ServicesSection({ servicesList = [], onBookService }) {
+  const homeServices = (servicesList || []).filter((s) => {
+    const isVisibleOnHome = Boolean(s.showOnHome ?? s.show_on_home);
+    const isActive = s.status === "Active" || !s.status;
+    return isVisibleOnHome && isActive;
+  });
+
+  const displayServices = homeServices.slice(0, 3);
 
   return (
     <section
@@ -35,7 +42,7 @@ export default function ServicesSection({ servicesList = [], onBookService }) {
             gap: "24px",
           }}
         >
-          {(servicesList && servicesList.length > 0 ? servicesList : []).slice(0, 3).map((service) => {
+          {displayServices.map((service) => {
             return (
               <div
                 key={service.id}

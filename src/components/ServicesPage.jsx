@@ -15,7 +15,7 @@ import {
   Car
 } from "lucide-react";
 
-export default function ServicesPage({ servicesList = [], onBookService, onNavigateHome, targetServiceId }) {
+export default function ServicesPage({ servicesList = [], onBookService, onNavigateHome, targetServiceId, shopSettings = {} }) {
   useEffect(() => {
     if (targetServiceId) {
       const timer = setTimeout(() => {
@@ -98,7 +98,7 @@ export default function ServicesPage({ servicesList = [], onBookService, onNavig
               <span>Book Appointment Now</span>
             </button>
             <a
-              href="tel:1800151100"
+              href={`tel:${(shopSettings?.tollFreePhone || "1800 15 11 00").replace(/\s+/g, "")}`}
               style={{
                 padding: "12px 24px",
                 borderRadius: "999px",
@@ -115,7 +115,7 @@ export default function ServicesPage({ servicesList = [], onBookService, onNavig
               }}
             >
               <PhoneCall size={17} color="#ef4444" />
-              <span>Hotline: 1800 15 11 00</span>
+              <span>Hotline: {shopSettings?.tollFreePhone || "1800 15 11 00"}</span>
             </a>
           </div>
         </div>

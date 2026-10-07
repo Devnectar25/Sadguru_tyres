@@ -55,3 +55,12 @@ Thumbs.db
 
 # Unwanted Original Asset Drafts
 public/images/originals/
+
+# Temporary, Seed, and Migration Files
+scripts/
+temp/
+test/
+*.tmp
+*.temp
+seed*.js
+migration*.js

@@ -17,6 +17,7 @@ export default function Navbar({
   onNavigateAbout,
   onNavigateContact,
   wishlistCount,
+  shopSettings = {},
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -370,7 +371,7 @@ export default function Navbar({
           })}
 
           <a
-            href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+            href={shopSettings?.googleMapsUrl || "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMobileMenuOpen(false)}
@@ -395,7 +396,7 @@ export default function Navbar({
           </a>
 
           <a
-            href="tel:1800151100"
+            href={`tel:${(shopSettings?.tollFreePhone || "1800 15 11 00").replace(/\s+/g, "")}`}
             onClick={() => setMobileMenuOpen(false)}
             style={{
               background: "#f8fafc",
@@ -414,7 +415,7 @@ export default function Navbar({
             }}
           >
             <Phone size={16} color="#0f172a" />
-            <span>Call 1800 15 11 00</span>
+            <span>Call {shopSettings?.tollFreePhone || "1800 15 11 00"}</span>
           </a>
         </div>
       )}

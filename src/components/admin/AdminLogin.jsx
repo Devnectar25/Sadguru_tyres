@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Lock, Mail, ShieldCheck, ArrowRight, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Lock, Mail, ShieldCheck, ArrowRight, Eye, EyeOff, KeyRound, UserCheck } from "lucide-react";
+import { apiService } from "../../services/api";
 
 export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
   const [username, setUsername] = useState("admin@sadgurutyres.com");
@@ -8,30 +9,100 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
-    if (!username || !password) {
-      setErrorMessage("Please enter both username and password.");
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername || !cleanPassword) {
+      setErrorMessage("Please enter both email and password.");
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      // 1. Authenticate with backend API
+      const res = await apiService.loginAdmin({
+        email: cleanUsername,
+        password: cleanPassword,
+      });
+
+      if (res && res.success && res.user) {
+        localStorage.setItem("sadguru_admin_auth", "true");
+        localStorage.setItem("sadguru_current_user", JSON.stringify(res.user));
+        setIsSubmitting(false);
+        if (onLoginSuccess) onLoginSuccess(res.user);
+        return;
+      }
+
+      if (res && res.message && !res.success) {
+        setIsSubmitting(false);
+        setErrorMessage(res.message);
+        return;
+      }
+
+      // 2. Offline / Local fallback validation
+      if (
+        (cleanUsername.toLowerCase() === "admin@sadgurutyres.com" || cleanUsername.toLowerCase() === "admin") &&
+        cleanPassword === "admin123"
+      ) {
+        const superUser = {
+          id: "superadmin",
+          name: "SuperAdmin",
+          email: "admin@sadgurutyres.com",
+          role: "Super Administrator",
+          isSuperAdmin: true,
+          permissions: ["all"],
+          avatarColor: "#ef4444",
+        };
+        localStorage.setItem("sadguru_admin_auth", "true");
+        localStorage.setItem("sadguru_current_user", JSON.stringify(superUser));
+        setIsSubmitting(false);
+        if (onLoginSuccess) onLoginSuccess(superUser);
+        return;
+      }
+
+      if (
+        cleanUsername.toLowerCase() === "ramesh.k@sadgurutyres.com" &&
+        cleanPassword === "password123"
+      ) {
+        const subUser = {
+          id: "sub_1",
+          name: "Ramesh Kulkarni",
+          email: "ramesh.k@sadgurutyres.com",
+          role: "Inventory Manager",
+          isSuperAdmin: false,
+          isSubadmin: true,
+          permissions: ["inventory_read", "inventory_write"],
+          avatarColor: "#2563eb",
+        };
+        localStorage.setItem("sadguru_admin_auth", "true");
+        localStorage.setItem("sadguru_current_user", JSON.stringify(subUser));
+        setIsSubmitting(false);
+        if (onLoginSuccess) onLoginSuccess(subUser);
+        return;
+      }
+
       setIsSubmitting(false);
-      onLoginSuccess();
-    }, 700);
+      setErrorMessage("Invalid credentials. Please verify your email and password.");
+    } catch (err) {
+      console.error("Login attempt exception:", err);
+      setIsSubmitting(false);
+      setErrorMessage("Connection error while logging in. Please try again.");
+    }
   };
 
-  const handleDemoFill = () => {
-    setUsername("admin@sadgurutyres.com");
-    setPassword("admin123");
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onLoginSuccess();
-    }, 500);
+  const handleDemoFill = (type = "admin") => {
+    if (type === "admin") {
+      setUsername("admin@sadgurutyres.com");
+      setPassword("admin123");
+    } else {
+      setUsername("ramesh.k@sadgurutyres.com");
+      setPassword("password123");
+    }
   };
 
   return (
@@ -92,7 +163,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
         {/* Top Brand Banner Header */}
         <div
           style={{
-            padding: "36px 32px 24px 32px",
+            padding: "32px 32px 20px 32px",
             background: "#ffffff",
             borderBottom: "1px solid #f1f5f9",
             textAlign: "center",
@@ -100,15 +171,15 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
         >
           <div
             style={{
-              width: "60px",
-              height: "60px",
+              width: "56px",
+              height: "56px",
               borderRadius: "50%",
               background: "#0f172a",
               border: "3px solid #ef4444",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              margin: "0 auto 16px auto",
+              margin: "0 auto 14px auto",
               boxShadow: "0 8px 20px rgba(239, 68, 68, 0.25)",
             }}
           >
@@ -119,21 +190,21 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
             />
           </div>
 
-          <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "0 0 6px 0", letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: "0 0 6px 0", letterSpacing: "-0.02em" }}>
             Sadguru Tyres
           </h2>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "999px", background: "#fef2f2", border: "1px solid #fecaca", fontSize: "0.74rem", fontWeight: "700", color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             <ShieldCheck size={14} />
-            <span>ADMINISTRATOR LOGIN PORTAL</span>
+            <span>ADMIN & SUB-ADMIN PORTAL</span>
           </div>
         </div>
 
         {/* Form Body */}
-        <div style={{ padding: "32px" }}>
+        <div style={{ padding: "28px 32px" }}>
           {errorMessage && (
             <div
               style={{
-                padding: "10px 14px",
+                padding: "12px 14px",
                 borderRadius: "10px",
                 background: "#fef2f2",
                 border: "1px solid #fecaca",
@@ -141,16 +212,17 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
                 fontSize: "0.82rem",
                 fontWeight: "600",
                 marginBottom: "20px",
+                lineHeight: "1.4",
               }}
             >
-              {errorMessage}
+              ⚠️ {errorMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-                Admin Username or Email
+                Username / Sub-Admin Email *
               </label>
               <div style={{ position: "relative" }}>
                 <Mail size={18} color="#94a3b8" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
@@ -159,7 +231,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin@sadgurutyres.com"
+                  placeholder="admin@sadgurutyres.com or your subadmin email"
                   style={{
                     width: "100%",
                     padding: "12px 14px 12px 42px",
@@ -167,7 +239,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
                     border: "1px solid #cbd5e1",
                     background: "#f8fafc",
                     color: "#0f172a",
-                    fontSize: "0.92rem",
+                    fontSize: "0.9rem",
                     fontWeight: "500",
                     outline: "none",
                     boxSizing: "border-box",
@@ -178,7 +250,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
 
             <div>
               <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-                Admin Access Password
+                Access Password *
               </label>
               <div style={{ position: "relative" }}>
                 <Lock size={18} color="#94a3b8" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
@@ -195,7 +267,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
                     border: "1px solid #cbd5e1",
                     background: "#f8fafc",
                     color: "#0f172a",
-                    fontSize: "0.92rem",
+                    fontSize: "0.9rem",
                     fontWeight: "500",
                     outline: "none",
                     boxSizing: "border-box",
@@ -221,38 +293,54 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
               </div>
             </div>
 
-            {/* Quick Demo Autofill Hint */}
+            {/* Demo Credential Quick Selector */}
             <div
               style={{
-                padding: "12px 14px",
+                padding: "10px 12px",
                 borderRadius: "12px",
                 background: "#f1f5f9",
                 border: "1px solid #e2e8f0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
               }}
             >
-              <div style={{ fontSize: "0.78rem", color: "#475569" }}>
-                <strong>Demo Credentials:</strong> <br />
-                admin / admin123
+              <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#475569", marginBottom: "6px" }}>
+                Quick Demo Credentials:
               </div>
-              <button
-                type="button"
-                onClick={handleDemoFill}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "8px",
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  color: "#ef4444",
-                  fontWeight: "700",
-                  fontSize: "0.75rem",
-                  cursor: "pointer",
-                }}
-              >
-                Auto Login
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleDemoFill("admin")}
+                  style={{
+                    flex: 1,
+                    padding: "5px 8px",
+                    borderRadius: "6px",
+                    border: username.includes("admin@") ? "1px solid #ef4444" : "1px solid #cbd5e1",
+                    background: username.includes("admin@") ? "#fef2f2" : "#ffffff",
+                    color: username.includes("admin@") ? "#dc2626" : "#0f172a",
+                    fontWeight: "700",
+                    fontSize: "0.74rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  👑 SuperAdmin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoFill("subadmin")}
+                  style={{
+                    flex: 1,
+                    padding: "5px 8px",
+                    borderRadius: "6px",
+                    border: username.includes("ramesh") ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                    background: username.includes("ramesh") ? "#eff6ff" : "#ffffff",
+                    color: username.includes("ramesh") ? "#2563eb" : "#0f172a",
+                    fontWeight: "700",
+                    fontSize: "0.74rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  👤 Sub-Admin
+                </button>
+              </div>
             </div>
 
             {/* Submit Button */}
@@ -261,13 +349,13 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
               disabled={isSubmitting}
               style={{
                 width: "100%",
-                padding: "14px 20px",
+                padding: "13px 20px",
                 borderRadius: "999px",
                 border: "none",
                 background: "linear-gradient(135deg, #ef4444, #dc2626)",
                 color: "#ffffff",
                 fontWeight: "700",
-                fontSize: "0.95rem",
+                fontSize: "0.92rem",
                 cursor: "pointer",
                 boxShadow: "0 8px 20px rgba(239, 68, 68, 0.3)",
                 display: "flex",
@@ -278,10 +366,10 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
               }}
             >
               {isSubmitting ? (
-                <span>Authenticating Access...</span>
+                <span>Verifying Credentials...</span>
               ) : (
                 <>
-                  <span>Sign In to Admin Panel</span>
+                  <span>Sign In to Dashboard</span>
                   <ArrowRight size={18} />
                 </>
               )}
@@ -289,7 +377,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
           </form>
 
           {/* Return to Live Site */}
-          <div style={{ marginTop: "24px", textAlign: "center" }}>
+          <div style={{ marginTop: "20px", textAlign: "center" }}>
             <button
               type="button"
               onClick={onReturnToSite}
@@ -298,7 +386,7 @@ export default function AdminLogin({ onLoginSuccess, onReturnToSite }) {
                 border: "none",
                 color: "#64748b",
                 fontWeight: "600",
-                fontSize: "0.85rem",
+                fontSize: "0.84rem",
                 cursor: "pointer",
                 textDecoration: "underline",
               }}

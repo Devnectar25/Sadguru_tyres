@@ -10,7 +10,7 @@ export default function BrandSection({ brandsList }) {
     { id: "michelin", name: "Michelin", logo: "/images/mechalin.jpg", tagline: "Performance & Innovation" },
   ];
 
-  const brands = brandsList && brandsList.length > 0 ? brandsList : defaultBrands;
+  const brands = (brandsList && brandsList.length > 0 ? brandsList : defaultBrands).slice(0, 6);
 
   return (
     <section

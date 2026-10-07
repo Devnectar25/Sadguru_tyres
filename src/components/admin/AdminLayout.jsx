@@ -21,11 +21,14 @@ import {
   DollarSign,
   TrendingUp,
   Filter,
+  CreditCard,
+  Sparkles,
   Trash2,
   Edit,
   X,
   Check,
   Eye,
+  EyeOff,
   Award,
   BarChart3,
   UserCheck,
@@ -54,6 +57,8 @@ import {
   Mail,
   Tag,
   MessageCircle,
+  MapPin,
+  RotateCcw,
 } from "lucide-react";
 import { apiService } from "../../services/api";
 
@@ -84,6 +89,9 @@ export default function AdminLayout({
   onDeleteLead,
   isChatbotEnabled,
   onToggleChatbotEnabled,
+  shopSettings,
+  onUpdateShopSettings,
+  onResetShopSettings,
 }) {
   const mainContentRef = useRef(null);
 
@@ -154,72 +162,533 @@ export default function AdminLayout({
     category: "Tyre Care",
     image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: true,
   });
   const [serviceCategoryFilter, setServiceCategoryFilter] = useState("all");
   const [serviceStatusFilter, setServiceStatusFilter] = useState("all");
 
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // ==================== PRIME FEATURES UNLOCK & PAYMENT STATE ====================
+  const PRIME_FEATURES = [
+    {
+      id: "analytics",
+      name: "Analytics & Report",
+      subtitle: "View detailed product performance & sales funnel",
+      icon: BarChart3,
+      color: "#3b82f6",
+      priceINR: 2000,
+      tagline: "Comprehensive revenue graphs, customer conversion analytics & sales audit reports",
+      benefits: [
+        "Real-time revenue, order volume & sales tracking",
+        "Conversion funnel analysis (Page views → Inquiries → Sales)",
+        "Top selling tyre models & manufacturer breakdown",
+        "One-click JSON & CSV business audit export",
+      ],
+    },
+    {
+      id: "chatbot",
+      name: "Chatbot Support",
+      subtitle: "Manage product automated replies & AI assistant",
+      icon: Bot,
+      color: "#10b981",
+      priceINR: 2000,
+      tagline: "24/7 AI-driven customer support, automated tyre lookup, and instant appointment booking",
+      benefits: [
+        "Automated tyre size & vehicle compatibility recommendations",
+        "Instant 24/7 customer query resolution & booking capture",
+        "Customizable greeting, business hours & FAQ triggers",
+        "Live conversation simulator and visitor query logs",
+      ],
+    },
+    {
+      id: "error-monitoring",
+      name: "Error Monitoring",
+      subtitle: "Track inventory sync issues & server diagnostics",
+      icon: ShieldAlert,
+      color: "#ef4444",
+      priceINR: 2000,
+      tagline: "Real-time system health diagnostics, latency monitoring, and automated exception tracking",
+      benefits: [
+        "Real-time server uptime, DB health & latency diagnostics",
+        "Automated critical exception logs with full stack traces",
+        "Filter by severity (Critical, Warning, Info) & status",
+        "Interactive error simulation sandbox & log resolution tools",
+      ],
+    },
+    {
+      id: "coupons",
+      name: "Coupons & Discounts",
+      subtitle: "Create product discount codes & promo campaigns",
+      icon: Tag,
+      color: "#8b5cf6",
+      priceINR: 2000,
+      tagline: "Create and manage promo discount codes, seasonal deals, and instant cart discounts",
+      benefits: [
+        "Create Percentage (%) or Flat (₹) discount coupon codes",
+        "Set expiry dates, minimum spend limits & max redemption caps",
+        "Instant copyable coupon codes with active status toggling",
+        "Track coupon redemptions and gross customer savings",
+      ],
+    },
+    {
+      id: "whatsapp",
+      name: "WhatsApp Marketing",
+      subtitle: "Send product promos & order alerts via WhatsApp",
+      icon: MessageCircle,
+      color: "#22c55e",
+      priceINR: 2000,
+      tagline: "Broadcast marketing campaigns, tyre maintenance alerts, and booking updates directly to WhatsApp",
+      benefits: [
+        "Broadcast promotional deals & festive tyre discounts",
+        "Target customer segments (Leads, Recent Buyers, Quotes)",
+        "Realistic WhatsApp chat bubble template preview",
+        "Simulate broadcast campaign delivery with live progress metrics",
+      ],
+    },
+  ];
+
+  const [unlockedPrimeFeatures, setUnlockedPrimeFeatures] = useState(() => {
+    try {
+      localStorage.removeItem("sadguru_unlocked_prime_features");
+      localStorage.removeItem("sadguru_prime_unlocked");
+      const saved = localStorage.getItem("sadguru_prime_features_v3");
+      if (saved) return JSON.parse(saved);
+      return [];
+    } catch (_) {
+      return [];
+    }
+  });
+
+  const handleLockAllPrimeFeatures = () => {
+    setUnlockedPrimeFeatures([]);
+    setPrimePaymentReceipt(null);
+    localStorage.removeItem("sadguru_prime_features_v3");
+    localStorage.removeItem("sadguru_unlocked_prime_features");
+    localStorage.removeItem("sadguru_prime_unlocked");
+    localStorage.removeItem("sadguru_prime_last_receipt");
+    triggerToast("🔒 All Prime Products have been locked. Payment required to unlock.");
+  };
+
+  const isFeatureUnlocked = (featureId) => {
+    return unlockedPrimeFeatures.includes("all") || unlockedPrimeFeatures.includes(featureId);
+  };
+
+  const [showPrimeUnlockModal, setShowPrimeUnlockModal] = useState(false);
+  const [selectedPrimeFeatureForUnlock, setSelectedPrimeFeatureForUnlock] = useState(null);
+  const [selectedPrimePlan, setSelectedPrimePlan] = useState("single"); // "single" (₹2000) or "bundle" (₹9000)
+  const [showPrimePaymentSuccessModal, setShowPrimePaymentSuccessModal] = useState(false);
+  const [primePaymentReceipt, setPrimePaymentReceipt] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sadguru_prime_last_receipt");
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return null;
+  });
+
+  // Coupons State
+  const [couponsList, setCouponsList] = useState([
+    { id: "c1", code: "MONSOON20", type: "percentage", value: 20, minSpend: 4000, maxDiscount: 1500, expiry: "2026-10-31", uses: 48, status: "Active" },
+    { id: "c2", code: "FIRSTTYRE10", type: "percentage", value: 10, minSpend: 2000, maxDiscount: 800, expiry: "2026-12-31", uses: 112, status: "Active" },
+    { id: "c3", code: "DIWALI500", type: "flat", value: 500, minSpend: 6000, maxDiscount: 500, expiry: "2026-11-15", uses: 29, status: "Active" },
+    { id: "c4", code: "SADGURU100", type: "flat", value: 100, minSpend: 1000, maxDiscount: 100, expiry: "2026-12-31", uses: 75, status: "Inactive" },
+  ]);
+  const [showAddCouponModal, setShowAddCouponModal] = useState(false);
+  const [couponForm, setCouponForm] = useState({
+    code: "",
+    type: "percentage",
+    value: 15,
+    minSpend: 2500,
+    maxDiscount: 1000,
+    expiry: "2026-12-31",
+    status: "Active",
+  });
+
+  // WhatsApp Marketing State
+  const [whatsappTemplate, setWhatsappTemplate] = useState("monsoon_tyre_check");
+  const [whatsappAudience, setWhatsappAudience] = useState("all_leads");
+  const [whatsappCustomMsg, setWhatsappCustomMsg] = useState(
+    "🚗 Monsoon Tyre Safety Reminder from Sadguru Tyres! Get 20% OFF on 3D Laser Alignment & complimentary tyre health check this week. Book today at https://sadgurutyres.com or call +91 98220 12345."
+  );
+  const [isBroadcastingWhatsapp, setIsBroadcastingWhatsapp] = useState(false);
+  const [whatsappBroadcastLogs, setWhatsappBroadcastLogs] = useState([]);
+
+  // Chatbot State
+  const [chatbotActive, setChatbotActive] = useState(isChatbotEnabled !== false);
+  const [chatbotGreeting, setChatbotGreeting] = useState(
+    "Hello! Welcome to Sadguru Tyres Pune 🚗. How can I help you today with tyres, wheel alignment, or fitting services?"
+  );
+  const [chatbotPhone, setChatbotPhone] = useState("+91 98220 12345");
+  const [simulatedChatMessages, setSimulatedChatMessages] = useState([
+    { from: "bot", text: "Hello! Welcome to Sadguru Tyres Pune 🚗. How can I help you today?" },
+    { from: "user", text: "I need Apollo 205/55 R16 tyres for my Honda City." },
+    { from: "bot", text: "We have Apollo Alnac 4G (₹5,400) and Apollo Aspire 4G (₹6,200) in stock with free laser alignment. Would you like to book a fitting appointment?" },
+  ]);
+  const [testChatInput, setTestChatInput] = useState("");
+
+  // Store & Workshop Settings State
+  const DEFAULT_SETTINGS = {
+    storeName: "Sadguru Tyres & Alignment Center",
+    hubName: "Main Workshop Hub",
+    address: "Sadguru Tyres & Alignment Center, Main Highway Junction, Pune, Maharashtra 411001",
+    shortAddress: "Near Bus Stand, Main Road, Pune, Maharashtra 411001",
+    googleMapsUrl: "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8",
+    tollFreePhone: "1800 15 11 00",
+    directPhone: "+91 98220 12345 / 020 2543 8899",
+    email: "care@sadgurutyres.com",
+    weekdayHours: "Mon - Sat: 9:00 AM - 8:30 PM",
+    sundayHours: "Sun: 10:00 AM - 4:00 PM (Open 7 Days)",
+    closedNotice: "Open 7 Days",
+    currency: "INR",
+    expressTurnaround: "Express 30-minute fitment & alignment.",
+  };
+
+  const [settingsForm, setSettingsForm] = useState(() => {
+    try {
+      const local = localStorage.getItem("sadguru_shop_settings");
+      if (local && local !== "undefined" && local !== "null") {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(local) };
+      }
+    } catch (_) {}
+    return shopSettings || DEFAULT_SETTINGS;
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (shopSettings && typeof shopSettings === "object") {
+      setSettingsForm((prev) => ({ ...prev, ...shopSettings }));
+    }
+  }, [shopSettings]);
+
+  const handleSaveStoreSettings = async (e) => {
+    if (e) e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const payload = { ...DEFAULT_SETTINGS, ...settingsForm, updated_at: new Date().toISOString() };
+      localStorage.setItem("sadguru_shop_settings", JSON.stringify(payload));
+      if (onUpdateShopSettings) {
+        await onUpdateShopSettings(payload);
+      }
+      triggerToast("✨ Workshop & Concierge settings updated dynamically across the website!");
+    } catch (err) {
+      console.error("Save settings error:", err);
+      triggerToast("⚠️ Failed to save shop settings. Please try again.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleResetStoreSettings = async () => {
+    if (window.confirm("Are you sure you want to reset store settings to default workshop information?")) {
+      setSettingsForm(DEFAULT_SETTINGS);
+      localStorage.removeItem("sadguru_shop_settings");
+      if (onResetShopSettings) {
+        await onResetShopSettings();
+      } else if (onUpdateShopSettings) {
+        await onUpdateShopSettings(DEFAULT_SETTINGS);
+      }
+      triggerToast("↺ Store settings restored to factory defaults!");
+    }
+  };
+
+  // Handle Prime Card Click
+  const handlePrimeCardClick = (feature) => {
+    if (isFeatureUnlocked(feature.id)) {
+      setActiveTab(feature.id);
+    } else {
+      setSelectedPrimeFeatureForUnlock(feature);
+      setSelectedPrimePlan("single");
+      setShowPrimeUnlockModal(true);
+    }
+  };
+
+  // Launch Razorpay Payment for Prime Features
+  const handleInitiatePrimeRazorpayPayment = async (feature, plan = "single") => {
+    setIsProcessingPayment(true);
+    const isLoaded = await loadRazorpayScript();
+    if (!isLoaded) {
+      setIsProcessingPayment(false);
+      triggerToast("⚠️ Failed to load Razorpay checkout. Please check internet connection.");
+      return;
+    }
+
+    const isBundle = plan === "bundle";
+    const amountINR = isBundle ? 9000 : (feature?.priceINR || 2000);
+    const featureName = isBundle ? "All 5 Prime Features Suite" : (feature?.name || "Prime Feature");
+    const featureKey = isBundle ? "all" : (feature?.id || "custom");
+
+    const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_SIPp9QznVVM48W";
+
+    const options = {
+      key: keyId,
+      amount: amountINR * 100,
+      currency: "INR",
+      name: "DevNectar Consultancy",
+      description: `Unlock Prime: ${featureName}`,
+      image: "/images/sgt_logo.png",
+      handler: async function (response) {
+        try {
+          const verifyPayload = {
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id || `order_prime_${Date.now()}`,
+            amount: amountINR,
+            feature: `prime_${featureKey}`,
+            userName: currentUser?.name || "SuperAdmin",
+            userEmail: currentUser?.email || "admin@sadgurutyres.com",
+          };
+
+          await apiService.verifyPayment(verifyPayload);
+
+          const receiptData = {
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id || `ord_prime_${Date.now()}`,
+            amount: amountINR,
+            currency: "INR",
+            feature: featureName,
+            featureKey: featureKey,
+            date: new Date().toLocaleString("en-IN"),
+            paidBy: currentUser?.name || "Super Administrator",
+            email: currentUser?.email || "admin@sadgurutyres.com",
+            status: "Captured & Verified",
+          };
+
+          const newUnlocked = isBundle
+            ? ["analytics", "chatbot", "error-monitoring", "coupons", "whatsapp", "all"]
+            : [...new Set([...unlockedPrimeFeatures, featureKey])];
+
+          setUnlockedPrimeFeatures(newUnlocked);
+          localStorage.setItem("sadguru_prime_features_v3", JSON.stringify(newUnlocked));
+          localStorage.setItem("sadguru_prime_last_receipt", JSON.stringify(receiptData));
+          setPrimePaymentReceipt(receiptData);
+
+          setShowPrimeUnlockModal(false);
+          setIsProcessingPayment(false);
+          setShowPrimePaymentSuccessModal(true);
+          triggerToast(`🎉 Payment Successful! ${featureName} is now unlocked.`);
+        } catch (err) {
+          console.error("Prime payment post-processing error:", err);
+          const fallbackReceipt = {
+            paymentId: response.razorpay_payment_id,
+            amount: amountINR,
+            currency: "INR",
+            feature: featureName,
+            featureKey: featureKey,
+            date: new Date().toLocaleString("en-IN"),
+            paidBy: currentUser?.name || "Super Administrator",
+            status: "Captured",
+          };
+          const newUnlocked = isBundle
+            ? ["analytics", "chatbot", "error-monitoring", "coupons", "whatsapp", "all"]
+            : [...new Set([...unlockedPrimeFeatures, featureKey])];
+
+          setUnlockedPrimeFeatures(newUnlocked);
+          localStorage.setItem("sadguru_prime_features_v3", JSON.stringify(newUnlocked));
+          localStorage.setItem("sadguru_prime_last_receipt", JSON.stringify(fallbackReceipt));
+          setPrimePaymentReceipt(fallbackReceipt);
+
+          setShowPrimeUnlockModal(false);
+          setIsProcessingPayment(false);
+          setShowPrimePaymentSuccessModal(true);
+        }
+      },
+      prefill: {
+        name: currentUser?.name || "Super Administrator",
+        email: currentUser?.email || "admin@sadgurutyres.com",
+        contact: "+91 98220 12345",
+      },
+      notes: {
+        feature_unlock: featureName,
+        store: "DevNectar Consultancy",
+      },
+      theme: {
+        color: "#1e3a8a", // Navy Blue
+      },
+      modal: {
+        ondismiss: function () {
+          setIsProcessingPayment(false);
+        },
+      },
+    };
+
+    try {
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.on("payment.failed", function (failResponse) {
+        setIsProcessingPayment(false);
+        triggerToast(`⚠️ Payment Declined: ${failResponse.error?.description || "Transaction failed"}`);
+      });
+      rzpInstance.open();
+    } catch (e) {
+      console.error("Razorpay prime open error:", e);
+      setIsProcessingPayment(false);
+      triggerToast("⚠️ Error launching Razorpay gateway.");
+    }
+  };
+
+  // Dynamic Razorpay Script Loader
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleOpenAddServiceModal = () => {
+    if ((servicesList || []).length >= 12) {
+      triggerToast("⚠️ Maximum limit of 12 services reached. You cannot add more services.");
+      return;
+    }
+    const currentHomeCount = (servicesList || []).filter(
+      (s) => Boolean(s.showOnHome ?? s.show_on_home)
+    ).length;
     setEditingService(null);
     setServiceForm({
       title: "",
+      name: "",
       shortDesc: "",
+      description: "",
       price: "",
+      priceINR: "",
       duration: "30 Mins",
       category: "Tyre Care",
       image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
       status: "Active",
+      showOnHome: currentHomeCount < 3,
     });
     setShowAddServiceModal(true);
   };
 
   const handleOpenEditServiceModal = (service) => {
     setEditingService(service);
+    const serviceName = service.title || service.name || "";
+    const serviceDesc = service.shortDesc || service.description || "";
+    const servicePrice = service.price || service.priceINR || service.price_inr || "";
+    const isShowOnHome = Boolean(service.showOnHome ?? service.show_on_home);
     setServiceForm({
       ...service,
-      title: service.title || "",
-      shortDesc: service.shortDesc || "",
-      price: service.price || "",
+      title: serviceName,
+      name: serviceName,
+      shortDesc: serviceDesc,
+      description: serviceDesc,
+      price: servicePrice,
+      priceINR: service.priceINR || service.price_inr || "",
       duration: service.duration || "30 Mins",
       category: service.category || "Tyre Care",
       image: service.image || "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
       status: service.status || "Active",
+      showOnHome: isShowOnHome,
     });
     setShowAddServiceModal(true);
   };
 
   const handleSaveServiceForm = async (e) => {
     e.preventDefault();
-    if (!serviceForm.title) return;
+    const serviceName = serviceForm.title || serviceForm.name;
+    if (!serviceName) return;
+
+    if (!editingService && (servicesList || []).length >= 12) {
+      triggerToast("⚠️ Maximum limit of 12 services reached. You cannot add more services.");
+      return;
+    }
+
+    const showOnHome = Boolean(serviceForm.showOnHome ?? serviceForm.show_on_home);
+    if (showOnHome) {
+      const activeHomeCount = (servicesList || []).filter(
+        (s) => (!editingService || s.id !== editingService.id) && Boolean(s.showOnHome ?? s.show_on_home)
+      ).length;
+      if (activeHomeCount >= 3) {
+        triggerToast("⚠️ Maximum 3 services can be displayed on the Home page. Please uncheck 'Show on Home' or hide another service first.");
+        return;
+      }
+    }
+
+    let numPrice = 0;
+    if (typeof serviceForm.price === "number") numPrice = serviceForm.price;
+    else if (typeof serviceForm.priceINR === "number") numPrice = serviceForm.priceINR;
+    else if (serviceForm.price || serviceForm.priceINR) {
+      const raw = String(serviceForm.price || serviceForm.priceINR).replace(/[^0-9.]/g, "");
+      numPrice = parseFloat(raw) || 0;
+    }
+
+    const payload = {
+      ...serviceForm,
+      title: serviceName,
+      name: serviceName,
+      shortDesc: serviceForm.shortDesc || serviceForm.description || "",
+      description: serviceForm.shortDesc || serviceForm.description || "",
+      priceINR: numPrice,
+      price_inr: numPrice,
+      price: serviceForm.price || `₹ ${numPrice.toLocaleString("en-IN")}`,
+      duration: serviceForm.duration || "30 Mins",
+      category: serviceForm.category || "Tyre Care",
+      image: serviceForm.image || "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
+      status: serviceForm.status || "Active",
+      showOnHome: showOnHome,
+      show_on_home: showOnHome,
+    };
 
     if (editingService) {
-      if (onUpdateService) await onUpdateService({ ...editingService, ...serviceForm });
-      triggerToast(`Updated service "${serviceForm.title}"`);
+      if (onUpdateService) await onUpdateService({ ...editingService, ...payload });
+      triggerToast(`Updated service "${serviceName}"`);
     } else {
       const newService = {
         id: `srv-${Date.now()}`,
-        ...serviceForm,
+        ...payload,
       };
       if (onAddService) await onAddService(newService);
-      triggerToast(`Added new service "${serviceForm.title}"`);
+      triggerToast(`Added new service "${serviceName}"`);
     }
     setShowAddServiceModal(false);
   };
 
   const handleDeleteServiceItem = async (id, name) => {
     if (onDeleteService) await onDeleteService(id);
-    triggerToast(`Deleted service "${name}"`);
+    triggerToast(`Deleted service "${name || "Service"}"`);
   };
 
   const handleToggleServiceStatus = async (service) => {
     const newStatus = service.status === "Active" ? "Inactive" : "Active";
     const updated = { ...service, status: newStatus };
     if (onUpdateService) await onUpdateService(updated);
-    triggerToast(`Set "${service.title}" status to ${newStatus}`);
+    triggerToast(`Set "${service.title || service.name}" status to ${newStatus}`);
+  };
+
+  const handleToggleServiceShowOnHome = async (service) => {
+    const currentVal = Boolean(service.showOnHome ?? service.show_on_home);
+    const newShowOnHome = !currentVal;
+
+    if (newShowOnHome) {
+      const activeHomeCount = (servicesList || []).filter(
+        (s) => s.id !== service.id && Boolean(s.showOnHome ?? s.show_on_home)
+      ).length;
+      if (activeHomeCount >= 3) {
+        triggerToast("⚠️ Maximum 3 services can be featured on the Home screen. Hide another service before enabling this one.");
+        return;
+      }
+    }
+
+    const updated = {
+      ...service,
+      showOnHome: newShowOnHome,
+      show_on_home: newShowOnHome,
+    };
+    if (onUpdateService) await onUpdateService(updated);
+    triggerToast(
+      `Service "${service.title || service.name}" ${newShowOnHome ? "is now visible on Home screen" : "hidden from Home screen"}`
+    );
   };
 
   // Form State for Adding / Editing Tyre
   const [showAddTyreModal, setShowAddTyreModal] = useState(false);
   const [editingTyre, setEditingTyre] = useState(null);
+  const [selectedDetailTyre, setSelectedDetailTyre] = useState(null);
   const [tyreForm, setTyreForm] = useState({
     name: "",
     brand: "",
@@ -251,6 +720,21 @@ export default function AdminLayout({
   });
 
   // ==================== NEW MODULE: SUB-ADMINS & ROLES STATE ====================
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sadguru_current_user");
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return {
+      id: "superadmin",
+      name: "SuperAdmin",
+      email: "admin@sadgurutyres.com",
+      role: "Super Administrator",
+      isSuperAdmin: true,
+      permissions: ["all"],
+      avatarColor: "#ef4444",
+    };
+  });
   const [subadminsList, setSubadminsList] = useState([]);
   const [auditLogsList, setAuditLogsList] = useState([]);
   const [showAddSubadminModal, setShowAddSubadminModal] = useState(false);
@@ -258,10 +742,57 @@ export default function AdminLayout({
   const [subadminForm, setSubadminForm] = useState({
     name: "",
     email: "",
+    password: "",
     role: "Inventory Manager",
     phone: "+91 98000 00000",
     permissions: ["inventory_read", "inventory_write"],
   });
+  const [subadminFormErrors, setSubadminFormErrors] = useState({});
+  const [showSubadminPassword, setShowSubadminPassword] = useState(false);
+
+  // Sub-Admin Module Permission Checker
+  const isTabPermitted = (tabId) => {
+    if (!currentUser) return true;
+    if (currentUser.isSuperAdmin || (currentUser.permissions && currentUser.permissions.includes("all"))) {
+      return true;
+    }
+    const perms = currentUser.permissions || [];
+    switch (tabId) {
+      case "dashboard":
+        return true;
+      case "inventory":
+      case "products":
+        return perms.includes("inventory_read") || perms.includes("inventory_write");
+      case "brands":
+        return perms.includes("brands_manage");
+      case "services":
+        return perms.includes("inventory_write") || perms.includes("inventory_read") || perms.includes("bookings_manage");
+      case "bookings":
+        return perms.includes("bookings_manage");
+      case "quotes":
+        return perms.includes("quotes_manage");
+      case "leads":
+        return perms.includes("bookings_manage") || perms.includes("quotes_manage");
+      case "faqs":
+        return perms.includes("bookings_manage") || perms.includes("inventory_write");
+      case "chatbot":
+        return perms.includes("bookings_manage");
+      case "subadmins":
+      case "settings":
+      case "error-monitoring":
+      case "analytics":
+        return false; // SuperAdmin only
+      default:
+        return false;
+    }
+  };
+
+  // Redirect Sub-Admin to dashboard if navigating to unauthorized tab
+  useEffect(() => {
+    if (activeTab && !isTabPermitted(activeTab)) {
+      setActiveTab("dashboard");
+    }
+  }, [activeTab, currentUser]);
 
   // ==================== NEW MODULE: ERROR MONITORING STATE ====================
   const [errorLogs, setErrorLogs] = useState([]);
@@ -328,7 +859,12 @@ export default function AdminLayout({
     if (!faqForm.question || !faqForm.answer) return;
 
     if (editingFaq) {
-      if (onUpdateFaq) await onUpdateFaq(editingFaq.id, faqForm);
+      const updatedItem = {
+        ...editingFaq,
+        ...faqForm,
+        id: editingFaq.id,
+      };
+      if (onUpdateFaq) await onUpdateFaq(editingFaq.id, updatedItem);
       triggerToast(`Updated FAQ entry`);
     } else {
       if ((faqsList || []).length >= 5) {
@@ -336,7 +872,11 @@ export default function AdminLayout({
         setShowAddFaqModal(false);
         return;
       }
-      if (onAddFaq) await onAddFaq(faqForm);
+      const newFaqItem = {
+        id: `faq_${Date.now()}`,
+        ...faqForm,
+      };
+      if (onAddFaq) await onAddFaq(newFaqItem);
       triggerToast(`Created new FAQ entry`);
     }
     setShowAddFaqModal(false);
@@ -391,6 +931,10 @@ export default function AdminLayout({
 
   // Brand Handlers
   const handleOpenAddBrandModal = () => {
+    if ((brandsList || []).length >= 6) {
+      triggerToast("⚠️ Maximum 6 Partner Brands allowed in Showcase. Edit or delete an existing brand.");
+      return;
+    }
     setEditingBrand(null);
     setBrandForm({
       name: "",
@@ -419,6 +963,11 @@ export default function AdminLayout({
         if (onUpdateBrand) onUpdateBrand({ ...editingBrand, ...brandForm });
         triggerToast(`Updated brand "${brandForm.name}"`);
       } else {
+        if ((brandsList || []).length >= 6) {
+          triggerToast("⚠️ Maximum 6 Partner Brands allowed in Showcase.");
+          setShowAddBrandModal(false);
+          return;
+        }
         const newId = brandForm.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
         if (onAddBrand) onAddBrand({ ...brandForm, id: newId, status: "Active" });
         triggerToast(`New brand "${brandForm.name}" added to Showcase`);
@@ -436,21 +985,22 @@ export default function AdminLayout({
     setTyreForm({
       name: "",
       brand: "",
-      vehicleType: "",
-      tyreType: "",
-      performanceLevel: "",
-      width: "",
-      profile: "",
-      rimSize: "",
-      category: "",
-      badge: "",
-      priceINR: "",
-      priceUSD: "",
-      stock: "",
-      rating: "",
+      vehicleType: "Cars",
+      tyreType: "All-Season",
+      performanceLevel: "High Performance",
+      width: "225",
+      profile: "45",
+      rimSize: "17",
+      category: "Passenger Tyre",
+      badge: "Featured",
+      priceINR: 12500,
+      priceUSD: 195,
+      stock: 30,
+      rating: 4.8,
       image: "",
       image2: "",
       image3: "",
+      showOnHome: true,
       tagline: "",
     });
     setShowAddTyreModal(true);
@@ -476,24 +1026,38 @@ export default function AdminLayout({
       image: tyre.image || "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_sport.jpg",
       image2: tyre.image2 || "",
       image3: tyre.image3 || "",
+      showOnHome: tyre.showOnHome !== false && tyre.show_on_home !== false && tyre.visual_specs?.show_on_home !== false,
       tagline: tyre.tagline || "Engineered for maximum grip and safety.",
     });
     setShowAddTyreModal(true);
   };
 
+  const DEFAULT_TYRE_IMAGE = "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_sport.jpg";
+
   const handleSaveTyreForm = (e) => {
     e.preventDefault();
     if (!tyreForm.name) return;
 
-    if (!tyreForm.image) {
-      triggerToast("Please upload at least one image (Primary Image).");
-      return;
-    }
+    const primaryImage = tyreForm.image || DEFAULT_TYRE_IMAGE;
+    const secondaryImage = tyreForm.image2 || "";
+    const tertiaryImage = tyreForm.image3 || "";
+    const showOnHome = tyreForm.showOnHome !== false;
 
     if (editingTyre) {
       onUpdateTyre({
         ...editingTyre,
         ...tyreForm,
+        image: primaryImage,
+        image2: secondaryImage,
+        image3: tertiaryImage,
+        showOnHome,
+        show_on_home: showOnHome,
+        visual_specs: {
+          ...(editingTyre.visual_specs || {}),
+          image2: secondaryImage,
+          image3: tertiaryImage,
+          show_on_home: showOnHome,
+        },
         priceINR: Number(tyreForm.priceINR),
         priceUSD: Number(tyreForm.priceUSD),
         stock: Number(tyreForm.stock),
@@ -504,6 +1068,16 @@ export default function AdminLayout({
       onAddTyre({
         ...tyreForm,
         id: newId,
+        image: primaryImage,
+        image2: secondaryImage,
+        image3: tertiaryImage,
+        showOnHome,
+        show_on_home: showOnHome,
+        visual_specs: {
+          image2: secondaryImage,
+          image3: tertiaryImage,
+          show_on_home: showOnHome,
+        },
         reviewsCount: 1,
         dateAdded: new Date().toISOString().split("T")[0],
         priceINR: Number(tyreForm.priceINR),
@@ -530,9 +1104,12 @@ export default function AdminLayout({
   // ==================== SUB-ADMIN HANDLERS ====================
   const handleOpenAddSubadmin = () => {
     setEditingSubadmin(null);
+    setSubadminFormErrors({});
+    setShowSubadminPassword(false);
     setSubadminForm({
       name: "",
       email: "",
+      password: "",
       role: "Inventory Manager",
       phone: "+91 98000 00000",
       permissions: ["inventory_read", "inventory_write"],
@@ -542,9 +1119,12 @@ export default function AdminLayout({
 
   const handleOpenEditSubadmin = (subadmin) => {
     setEditingSubadmin(subadmin);
+    setSubadminFormErrors({});
+    setShowSubadminPassword(false);
     setSubadminForm({
-      name: subadmin.name,
-      email: subadmin.email,
+      name: subadmin.name || "",
+      email: subadmin.email || "",
+      password: "", // Optional on edit
       role: subadmin.role || "Support Executive",
       phone: subadmin.phone || "+91 98000 00000",
       permissions: subadmin.permissions || ["bookings_manage"],
@@ -554,23 +1134,76 @@ export default function AdminLayout({
 
   const handleSaveSubadminForm = async (e) => {
     e.preventDefault();
-    if (!subadminForm.name || !subadminForm.email) return;
+    const errors = {};
+
+    const cleanName = (subadminForm.name || "").trim();
+    const cleanEmail = (subadminForm.email || "").trim().toLowerCase();
+    const cleanPassword = (subadminForm.password || "").trim();
+    const cleanPhone = (subadminForm.phone || "").trim();
+
+    if (!cleanName || cleanName.length < 2) {
+      errors.name = "Full name is required (minimum 2 characters).";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      errors.email = "Please enter a valid email address.";
+    } else {
+      const isDuplicate = (subadminsList || []).some(
+        (s) => s.email && s.email.toLowerCase() === cleanEmail && (!editingSubadmin || s.id !== editingSubadmin.id)
+      );
+      if (isDuplicate) {
+        errors.email = "This email is already registered to another sub-admin.";
+      }
+    }
+
+    if (!editingSubadmin) {
+      if (!cleanPassword || cleanPassword.length < 6) {
+        errors.password = "Password is required (minimum 6 characters).";
+      }
+    } else {
+      if (cleanPassword && cleanPassword.length < 6) {
+        errors.password = "Password must be at least 6 characters if changing.";
+      }
+    }
+
+    if (!subadminForm.permissions || subadminForm.permissions.length === 0) {
+      errors.permissions = "Please select at least one module permission.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setSubadminFormErrors(errors);
+      triggerToast("⚠️ Please correct the highlighted errors in the form.");
+      return;
+    }
+
+    setSubadminFormErrors({});
+
+    const payload = {
+      ...subadminForm,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+    };
+    if (cleanPassword) {
+      payload.password = cleanPassword;
+    }
 
     if (editingSubadmin) {
-      const res = await apiService.updateSubadmin(editingSubadmin.id, subadminForm);
+      const res = await apiService.updateSubadmin(editingSubadmin.id, payload);
       if (res && res.success) {
         setSubadminsList((prev) =>
           prev.map((s) => (s.id === editingSubadmin.id ? res.data : s))
         );
         if (res.auditLogs) setAuditLogsList(res.auditLogs);
-        triggerToast(`Updated permissions for subadmin "${subadminForm.name}"`);
+        triggerToast(`Updated sub-admin account for "${cleanName}"`);
       }
     } else {
-      const res = await apiService.createSubadmin(subadminForm);
+      const res = await apiService.createSubadmin(payload);
       if (res && res.success) {
         setSubadminsList((prev) => [res.data, ...prev]);
         if (res.auditLogs) setAuditLogsList(res.auditLogs);
-        triggerToast(`New subadmin account created for "${subadminForm.name}"`);
+        triggerToast(`New sub-admin account created for "${cleanName}"`);
       }
     }
     setShowAddSubadminModal(false);
@@ -668,21 +1301,38 @@ export default function AdminLayout({
     triggerToast("Analytics report downloaded successfully!");
   };
 
-  // Filters & Pagination for Tyre Catalog (5 products per page)
+  // Filters & Pagination for Tyre Catalog
   const [inventoryPage, setInventoryPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const [inventoryFilter, setInventoryFilter] = useState("all"); // 'all', 'visible', 'hidden'
+  const [inventoryItemsPerPage, setInventoryItemsPerPage] = useState(5);
+  const ITEMS_PER_PAGE = inventoryItemsPerPage;
 
   useEffect(() => {
     setInventoryPage(1);
-  }, [searchTerm, activeTab]);
+  }, [searchTerm, inventoryFilter, inventoryItemsPerPage, activeTab]);
 
-  const filteredTyres = (tyresData || []).filter(
-    (t) =>
-      t &&
-      ((t.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-       (t.brand || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-       (t.category || "").toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const visibleTyresCount = (tyresData || []).filter(
+    (t) => t && t.showOnHome !== false && t.show_on_home !== false && t.visual_specs?.show_on_home !== false
+  ).length;
+
+  const hiddenTyresCount = (tyresData || []).length - visibleTyresCount;
+
+  const filteredTyres = (tyresData || []).filter((t) => {
+    if (!t) return false;
+    const isVisible = t.showOnHome !== false && t.show_on_home !== false && t.visual_specs?.show_on_home !== false;
+    if (inventoryFilter === "visible" && !isVisible) return false;
+    if (inventoryFilter === "hidden" && isVisible) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      return (
+        (t.name || "").toLowerCase().includes(q) ||
+        (t.brand || "").toLowerCase().includes(q) ||
+        (t.category || "").toLowerCase().includes(q) ||
+        (t.vehicleType || "").toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   const totalInventoryPages = Math.ceil(filteredTyres.length / ITEMS_PER_PAGE) || 1;
   const currentInventoryPage = Math.min(inventoryPage, totalInventoryPages);
@@ -797,6 +1447,32 @@ export default function AdminLayout({
     currentLeadsPage * LEADS_PER_PAGE
   );
 
+  // Filters & Pagination for Wholesale & Fleet Quote Requests (5 items per page)
+  const [quotesPage, setQuotesPage] = useState(1);
+  const [quotesItemsPerPage, setQuotesItemsPerPage] = useState(5);
+  const QUOTES_PER_PAGE = quotesItemsPerPage;
+
+  useEffect(() => {
+    setQuotesPage(1);
+  }, [searchTerm, quotesItemsPerPage, activeTab]);
+
+  const filteredQuotes = (quotesList || []).filter((q) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      (q.tyreName && q.tyreName.toLowerCase().includes(search)) ||
+      (q.email && q.email.toLowerCase().includes(search)) ||
+      (q.totalFormatted && q.totalFormatted.toLowerCase().includes(search))
+    );
+  });
+
+  const totalQuotesPages = Math.ceil(filteredQuotes.length / QUOTES_PER_PAGE) || 1;
+  const currentQuotesPage = Math.min(quotesPage, totalQuotesPages);
+  const paginatedQuotes = filteredQuotes.slice(
+    (currentQuotesPage - 1) * QUOTES_PER_PAGE,
+    currentQuotesPage * QUOTES_PER_PAGE
+  );
+
   return (
     <div
       style={{
@@ -905,7 +1581,9 @@ export default function AdminLayout({
             { id: "faqs", label: "FAQ Manager", icon: HelpCircle },
             { id: "products", label: "Prime Products", icon: Layers },
             { id: "settings", label: "Shop Settings", icon: Settings },
-          ].map((item) => {
+          ]
+            .filter((item) => isTabPermitted(item.id))
+            .map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -1085,11 +1763,18 @@ export default function AdminLayout({
           {/* Right Header Controls */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
             {/* Profile Pill */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 12px", borderRadius: "999px", background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
-              <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "0.78rem", color: "#ffffff" }}>
-                A
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "5px 14px", borderRadius: "999px", background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
+              <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: currentUser?.avatarColor || (currentUser?.isSuperAdmin ? "#ef4444" : "#2563eb"), display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "0.8rem", color: "#ffffff", flexShrink: 0 }}>
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "A"}
               </div>
-              <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "#0f172a", whiteSpace: "nowrap" }}>Super Admin</span>
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: "800", color: "#0f172a", whiteSpace: "nowrap" }}>
+                  {currentUser?.name || "Super Admin"}
+                </span>
+                <span style={{ fontSize: "0.66rem", fontWeight: "700", color: currentUser?.isSuperAdmin ? "#ef4444" : "#2563eb", whiteSpace: "nowrap" }}>
+                  {currentUser?.role || (currentUser?.isSuperAdmin ? "Super Administrator" : "Sub-Admin")}
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -1291,13 +1976,54 @@ export default function AdminLayout({
           {/* ==================== MODULE 1: ANALYTICS DASHBOARD ==================== */}
           {activeTab === "analytics" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Business & Sales Analytics</h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Monitor store revenue, customer conversion funnel, and top performing tyre manufacturer sales.
+              {!isFeatureUnlocked("analytics") ? (
+                <div style={{ background: "#ffffff", borderRadius: "24px", padding: "48px 32px", textAlign: "center", border: "1px solid #e2e8f0", maxWidth: "600px", margin: "40px auto", boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "2px solid #fde68a" }}>
+                    <Lock size={30} color="#d97706" />
+                  </div>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "800", background: "#fef3c7", color: "#92400e", padding: "4px 12px", borderRadius: "999px" }}>
+                    PRIME MODULE • PAYMENT REQUIRED
+                  </span>
+                  <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "14px 0 8px 0" }}>
+                    Business & Sales Analytics
+                  </h2>
+                  <p style={{ fontSize: "0.88rem", color: "#64748b", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+                    Unlock real-time sales revenue tracking, customer conversion funnels, top selling tyre brands, and exportable business audit reports.
                   </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock(PRIME_FEATURES.find((f) => f.id === "analytics") || { name: "Analytics & Report", priceINR: 2000, id: "analytics" });
+                        setSelectedPrimePlan("single");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "800", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)" }}
+                    >
+                      Pay ₹2,000 to Unlock
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("products")}
+                      style={{ padding: "12px 20px", borderRadius: "12px", background: "#ffffff", border: "1px solid #cbd5e1", color: "#475569", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      View All Prime Modules
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div>
+                  <button
+                    onClick={() => setActiveTab("products")}
+                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "8px" }}
+                  >
+                    &larr; Back to Prime Products
+                  </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                    <div>
+                      <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Business & Sales Analytics</h2>
+                      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                        Monitor store revenue, customer conversion funnel, and top performing tyre manufacturer sales.
+                      </p>
+                    </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   {/* Period Selector Tabs */}
@@ -1498,6 +2224,8 @@ export default function AdminLayout({
               </div>
             </div>
           )}
+        </div>
+      )}
 
           {/* ==================== MODULE 2: SUB-ADMINS & ROLES ==================== */}
           {activeTab === "subadmins" && (
@@ -1662,13 +2390,54 @@ export default function AdminLayout({
           {/* ==================== MODULE 3: ERROR MONITORING ==================== */}
           {activeTab === "error-monitoring" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Real-Time Error Monitoring & Diagnostics</h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Track API exceptions, database warnings, and trigger simulated test errors for health checks.
+              {!isFeatureUnlocked("error-monitoring") ? (
+                <div style={{ background: "#ffffff", borderRadius: "24px", padding: "48px 32px", textAlign: "center", border: "1px solid #e2e8f0", maxWidth: "600px", margin: "40px auto", boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "2px solid #fde68a" }}>
+                    <Lock size={30} color="#d97706" />
+                  </div>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "800", background: "#fef3c7", color: "#92400e", padding: "4px 12px", borderRadius: "999px" }}>
+                    PRIME MODULE • PAYMENT REQUIRED
+                  </span>
+                  <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "14px 0 8px 0" }}>
+                    Real-Time Error Monitoring & Diagnostics
+                  </h2>
+                  <p style={{ fontSize: "0.88rem", color: "#64748b", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+                    Unlock real-time server health tracking, automated exception capture with stack traces, database latency diagnostics, and log resolution tools.
                   </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock(PRIME_FEATURES.find((f) => f.id === "error-monitoring") || { name: "Error Monitoring", priceINR: 2000, id: "error-monitoring" });
+                        setSelectedPrimePlan("single");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "800", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)" }}
+                    >
+                      Pay ₹2,000 to Unlock
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("products")}
+                      style={{ padding: "12px 20px", borderRadius: "12px", background: "#ffffff", border: "1px solid #cbd5e1", color: "#475569", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      View All Prime Modules
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div>
+                  <button
+                    onClick={() => setActiveTab("products")}
+                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "8px" }}
+                  >
+                    &larr; Back to Prime Products
+                  </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                    <div>
+                      <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Real-Time Error Monitoring & Diagnostics</h2>
+                      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                        Track API exceptions, database warnings, and trigger simulated test errors for health checks.
+                      </p>
+                    </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <button
@@ -1919,70 +2688,208 @@ export default function AdminLayout({
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* ==================== MODULE: PRODUCTS ==================== */}
+          {/* ==================== MODULE: PRIME PRODUCTS & PRO SUITE ==================== */}
           {activeTab === "products" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
                 <div>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Prime Products</h2>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "999px", background: "linear-gradient(135deg, #fef3c7, #fde68a)", color: "#92400e", fontSize: "0.72rem", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                    <Sparkles size={13} />
+                    <span>PREMIUM SUITE</span>
+                  </div>
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>Prime Products & Pro Modules</h2>
                   <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Manage store products, categories, and inventory.
+                    Unlock specialized enterprise capabilities: Business analytics, 24/7 AI chatbot, coupons & WhatsApp marketing.
                   </p>
                 </div>
 
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  {/* Unlock All Bundle Button */}
+                  {!isFeatureUnlocked("all") && unlockedPrimeFeatures.length < 5 && (
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock({ name: "All 5 Prime Features Suite", priceINR: 9000, id: "all" });
+                        setSelectedPrimePlan("bundle");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "10px 18px",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, #0f172a, #1e293b)",
+                        border: "1px solid #334155",
+                        color: "#fbbf24",
+                        fontWeight: "800",
+                        fontSize: "0.84rem",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <Sparkles size={15} />
+                      <span>Unlock All 5 Features (₹9,000 Bundle)</span>
+                    </button>
+                  )}
+
+                  {/* Lock All Products Button (If any unlocked) */}
+                  {unlockedPrimeFeatures.length > 0 && (
+                    <button
+                      onClick={handleLockAllPrimeFeatures}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "9px 14px",
+                        borderRadius: "10px",
+                        background: "#fef2f2",
+                        border: "1px solid #fecaca",
+                        color: "#dc2626",
+                        fontWeight: "700",
+                        fontSize: "0.82rem",
+                        cursor: "pointer",
+                      }}
+                      title="Lock all prime products again"
+                    >
+                      <Lock size={14} />
+                      <span>Lock All Products</span>
+                    </button>
+                  )}
+
+                  {/* Payment Receipt Button */}
+                  {primePaymentReceipt && (
+                    <button
+                      onClick={() => setShowPrimePaymentSuccessModal(true)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "9px 16px",
+                        borderRadius: "10px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        color: "#475569",
+                        fontWeight: "700",
+                        fontSize: "0.82rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <FileText size={14} />
+                      <span>Prime Receipt</span>
+                    </button>
+                  )}
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-                <div onClick={() => setActiveTab("analytics")} style={{ position: "relative", padding: "24px", borderRadius: "18px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.08)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(15, 23, 42, 0.04)"; }}>
-                  <Lock size={16} color="#f59e0b" style={{ position: "absolute", top: "16px", right: "16px" }} />
-                  <BarChart3 size={32} color="#3b82f6" style={{ marginBottom: "12px" }} />
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", margin: "0 0 6px 0" }}>Analytics & Report</h3>
-                  <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>View detailed product performance</p>
-                </div>
-                
-                <div onClick={() => setActiveTab("chatbot")} style={{ position: "relative", padding: "24px", borderRadius: "18px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.08)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(15, 23, 42, 0.04)"; }}>
-                  <Lock size={16} color="#f59e0b" style={{ position: "absolute", top: "16px", right: "16px" }} />
-                  <Bot size={32} color="#10b981" style={{ marginBottom: "12px" }} />
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", margin: "0 0 6px 0" }}>Chatbot Support</h3>
-                  <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>Manage product automated replies</p>
-                </div>
-                
-                <div onClick={() => setActiveTab("error-monitoring")} style={{ position: "relative", padding: "24px", borderRadius: "18px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.08)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(15, 23, 42, 0.04)"; }}>
-                  <Lock size={16} color="#f59e0b" style={{ position: "absolute", top: "16px", right: "16px" }} />
-                  <ShieldAlert size={32} color="#ef4444" style={{ marginBottom: "12px" }} />
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", margin: "0 0 6px 0" }}>Error Monitoring</h3>
-                  <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>Track inventory sync issues</p>
-                </div>
 
-                <div style={{ position: "relative", padding: "24px", borderRadius: "18px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.08)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(15, 23, 42, 0.04)"; }}>
-                  <Lock size={16} color="#f59e0b" style={{ position: "absolute", top: "16px", right: "16px" }} />
-                  <Tag size={32} color="#8b5cf6" style={{ marginBottom: "12px" }} />
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", margin: "0 0 6px 0" }}>Coupons</h3>
-                  <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>Create product discount codes</p>
-                </div>
+              {/* Prime Features Cards Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+                {PRIME_FEATURES.map((feature) => {
+                  const Icon = feature.icon;
+                  const unlocked = isFeatureUnlocked(feature.id);
+                  return (
+                    <div
+                      key={feature.id}
+                      onClick={() => handlePrimeCardClick(feature)}
+                      style={{
+                        position: "relative",
+                        padding: "24px",
+                        borderRadius: "20px",
+                        background: "#ffffff",
+                        border: unlocked ? "1.5px solid #a7f3d0" : "1px solid #e2e8f0",
+                        boxShadow: unlocked ? "0 4px 20px rgba(16, 185, 129, 0.08)" : "0 4px 15px rgba(15, 23, 42, 0.04)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = unlocked ? "0 10px 25px rgba(16, 185, 129, 0.15)" : "0 10px 25px rgba(15, 23, 42, 0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = unlocked ? "0 4px 20px rgba(16, 185, 129, 0.08)" : "0 4px 15px rgba(15, 23, 42, 0.04)";
+                      }}
+                    >
+                      {/* Status Badge at Top Right */}
+                      <div style={{ position: "absolute", top: "14px", right: "14px" }}>
+                        {unlocked ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.7rem", fontWeight: "800", background: "#ecfdf5", color: "#059669", padding: "3px 8px", borderRadius: "999px", border: "1px solid #a7f3d0" }}>
+                            👑 UNLOCKED
+                          </span>
+                        ) : (
+                          <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #fde68a" }} title="Click to pay & unlock">
+                            <Lock size={14} color="#d97706" />
+                          </div>
+                        )}
+                      </div>
 
-                <div style={{ position: "relative", padding: "24px", borderRadius: "18px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(15, 23, 42, 0.08)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(15, 23, 42, 0.04)"; }}>
-                  <Lock size={16} color="#f59e0b" style={{ position: "absolute", top: "16px", right: "16px" }} />
-                  <MessageCircle size={32} color="#22c55e" style={{ marginBottom: "12px" }} />
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0f172a", margin: "0 0 6px 0" }}>WhatsApp Marketing</h3>
-                  <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0 }}>Send product promos via WhatsApp</p>
-                </div>
+                      <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: `${feature.color}15`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "14px", color: feature.color }}>
+                        <Icon size={28} />
+                      </div>
+
+                      <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: "0 0 6px 0" }}>
+                        {feature.name}
+                      </h3>
+                      <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.4, flexGrow: 1 }}>
+                        {feature.subtitle}
+                      </p>
+
+                      {/* Footer Call to Action */}
+                      <div style={{ width: "100%", paddingTop: "12px", borderTop: "1px solid #f1f5f9" }}>
+                        {unlocked ? (
+                          <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#059669", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            ✓ Active • Click to Open &rarr;
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#ef4444", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            🔒 Pay ₹{Number(feature.priceINR || 2000).toLocaleString("en-IN")} to Unlock &rarr;
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* TAB 2: INVENTORY & CATALOG MANAGEMENT */}
-          {activeTab === "inventory" && (
+          {/* ==================== MODULE: COUPONS & DISCOUNTS ==================== */}
+          {activeTab === "coupons" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
                 <div>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Tyre Catalog Inventory</h2>
+                  <button
+                    onClick={() => setActiveTab("products")}
+                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
+                  >
+                    &larr; Back to Prime Products
+                  </button>
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>Coupons & Promo Codes</h2>
                   <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Manage prices, stock levels, badges, and specifications for all tyres displayed on the live website.
+                    Create seasonal discount codes for tyre purchases and workshop appointments.
                   </p>
                 </div>
+
                 <button
-                  onClick={handleOpenAddModal}
+                  onClick={() => {
+                    setCouponForm({
+                      code: "",
+                      type: "percentage",
+                      value: 15,
+                      minSpend: 2500,
+                      maxDiscount: 1000,
+                      expiry: "2026-12-31",
+                      status: "Active",
+                    });
+                    setShowAddCouponModal(true);
+                  }}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -1995,11 +2902,450 @@ export default function AdminLayout({
                     fontWeight: "700",
                     fontSize: "0.88rem",
                     cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
                   }}
                 >
                   <Plus size={16} />
-                  <span>Add New Product</span>
+                  <span>Create New Coupon</span>
                 </button>
+              </div>
+
+              {/* Coupons Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+                {couponsList.map((cpn) => (
+                  <div key={cpn.id} style={{ background: "#ffffff", borderRadius: "18px", border: "1px solid #e2e8f0", padding: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                        <span style={{ fontSize: "0.78rem", fontWeight: "800", background: "#f5f3ff", color: "#7c3aed", padding: "4px 10px", borderRadius: "999px", border: "1px solid #ddd6fe" }}>
+                          {cpn.type === "percentage" ? `${cpn.value}% DISCOUNT` : `₹${cpn.value} FLAT OFF`}
+                        </span>
+                        <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "3px 8px", borderRadius: "999px", background: cpn.status === "Active" ? "#ecfdf5" : "#f1f5f9", color: cpn.status === "Active" ? "#059669" : "#64748b", border: cpn.status === "Active" ? "1px solid #a7f3d0" : "1px solid #cbd5e1" }}>
+                          {cpn.status}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "10px", border: "1.5px dashed #cbd5e1", marginBottom: "14px" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", letterSpacing: "0.08em" }}>{cpn.code}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(cpn.code);
+                            triggerToast(`Copied code "${cpn.code}" to clipboard!`);
+                          }}
+                          style={{ background: "#ffffff", border: "1px solid #cbd5e1", padding: "4px 10px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "700", color: "#334155", cursor: "pointer" }}
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: "0.8rem", color: "#64748b", display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div>• Min Spend: ₹{cpn.minSpend?.toLocaleString("en-IN")}</div>
+                        <div>• Max Cap: ₹{cpn.maxDiscount?.toLocaleString("en-IN")}</div>
+                        <div>• Expires On: {cpn.expiry}</div>
+                        <div>• Redemptions: {cpn.uses} times</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #f1f5f9" }}>
+                      <button
+                        onClick={() => {
+                          const updated = couponsList.map((c) => (c.id === cpn.id ? { ...c, status: c.status === "Active" ? "Inactive" : "Active" } : c));
+                          setCouponsList(updated);
+                          triggerToast(`Toggled "${cpn.code}" status.`);
+                        }}
+                        style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff", color: "#475569", fontWeight: "700", fontSize: "0.78rem", cursor: "pointer" }}
+                      >
+                        {cpn.status === "Active" ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCouponsList(couponsList.filter((c) => c.id !== cpn.id));
+                          triggerToast(`Deleted coupon "${cpn.code}"`);
+                        }}
+                        style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #fecaca", background: "#fef2f2", color: "#ef4444", cursor: "pointer" }}
+                        title="Delete coupon"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ==================== MODULE: WHATSAPP MARKETING ==================== */}
+          {activeTab === "whatsapp" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <button
+                    onClick={() => setActiveTab("products")}
+                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
+                  >
+                    &larr; Back to Prime Products
+                  </button>
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>WhatsApp Marketing & Broadcast Hub</h2>
+                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                    Send direct promotional WhatsApp campaigns, seasonal maintenance alerts, and service reminders.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
+                {/* Campaign Composer */}
+                <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: "0 0 16px 0" }}>Compose Broadcast</h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Campaign Template</label>
+                      <select
+                        value={whatsappTemplate}
+                        onChange={(e) => {
+                          setWhatsappTemplate(e.target.value);
+                          if (e.target.value === "monsoon") {
+                            setWhatsappCustomMsg("🚗 Monsoon Tyre Safety Reminder from Sadguru Tyres! Get 20% OFF on 3D Laser Alignment & complimentary tread inspection. Book at https://sadgurutyres.com or call +91 98220 12345.");
+                          } else if (e.target.value === "diwali") {
+                            setWhatsappCustomMsg("🪔 Festive Special: Get ₹500 OFF on purchase of 4 Michelin or Bridgestone tyres with free robotic fitting at Sadguru Tyres Pune!");
+                          } else if (e.target.value === "service_reminder") {
+                            setWhatsappCustomMsg("🔧 Routine Maintenance Due: Your vehicle is due for wheel balancing and alignment check. Visit Sadguru Tyres today for smooth driving!");
+                          }
+                        }}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                      >
+                        <option value="monsoon">Monsoon Tyre Safety & Inspection (20% OFF)</option>
+                        <option value="diwali">Festive Mega Tyre Discount (₹500 OFF)</option>
+                        <option value="service_reminder">Wheel Alignment & Service Due Reminder</option>
+                        <option value="custom">Custom Promotional Message</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Target Audience Segment</label>
+                      <select
+                        value={whatsappAudience}
+                        onChange={(e) => setWhatsappAudience(e.target.value)}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                      >
+                        <option value="all_leads">All Customer Leads (48 verified numbers)</option>
+                        <option value="recent_buyers">Recent Tyre Buyers (32 customers)</option>
+                        <option value="quote_requests">Pending Quote Requesters (19 customers)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Message Content</label>
+                      <textarea
+                        rows={4}
+                        value={whatsappCustomMsg}
+                        onChange={(e) => setWhatsappCustomMsg(e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none", fontFamily: "inherit" }}
+                      />
+                    </div>
+
+                    <button
+                      disabled={isBroadcastingWhatsapp}
+                      onClick={() => {
+                        setIsBroadcastingWhatsapp(true);
+                        setTimeout(() => {
+                          setIsBroadcastingWhatsapp(false);
+                          setWhatsappBroadcastLogs((prev) => [
+                            { id: Date.now(), time: new Date().toLocaleTimeString(), audience: whatsappAudience, count: 48, status: "Broadcast Delivered ✓" },
+                            ...prev,
+                          ]);
+                          triggerToast("🎉 WhatsApp Broadcast dispatched to 48 customers!");
+                        }, 1200);
+                      }}
+                      style={{
+                        padding: "12px",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                        border: "none",
+                        color: "#ffffff",
+                        fontWeight: "700",
+                        fontSize: "0.9rem",
+                        cursor: isBroadcastingWhatsapp ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <MessageCircle size={18} />
+                      <span>{isBroadcastingWhatsapp ? "Sending Broadcast..." : "Send Broadcast Campaign"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* WhatsApp Chat Preview */}
+                <div style={{ background: "#efeae2", borderRadius: "20px", border: "1px solid #cbd5e1", padding: "20px", display: "flex", flexDirection: "column" }}>
+                  <div style={{ background: "#075e54", color: "#ffffff", padding: "12px 16px", borderRadius: "12px 12px 0 0", display: "flex", alignItems: "center", gap: "10px", margin: "-20px -20px 20px -20px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img src="/images/sgt_logo.png" alt="SGT" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "800", fontSize: "0.9rem" }}>Sadguru Tyres Official</div>
+                      <div style={{ fontSize: "0.72rem", color: "#dcf8c6" }}>Verified WhatsApp Business Account</div>
+                    </div>
+                  </div>
+
+                  <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ background: "#ffffff", padding: "14px 16px", borderRadius: "12px 12px 12px 0", maxWidth: "90%", boxShadow: "0 1px 2px rgba(0,0,0,0.15)", alignSelf: "flex-start", position: "relative" }}>
+                      <div style={{ fontSize: "0.85rem", color: "#111b21", whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
+                        {whatsappCustomMsg}
+                      </div>
+                      <div style={{ textAlign: "right", fontSize: "0.68rem", color: "#667781", marginTop: "4px" }}>
+                        {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ✓✓
+                      </div>
+                    </div>
+                  </div>
+
+                  {whatsappBroadcastLogs.length > 0 && (
+                    <div style={{ marginTop: "16px", background: "rgba(255,255,255,0.85)", padding: "12px", borderRadius: "10px", fontSize: "0.76rem" }}>
+                      <div style={{ fontWeight: "800", color: "#0f172a", marginBottom: "4px" }}>Recent Broadcast History:</div>
+                      {whatsappBroadcastLogs.slice(0, 2).map((log) => (
+                        <div key={log.id} style={{ color: "#15803d" }}>
+                          • {log.time} — Sent to {log.count} recipients ({log.status})
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================== MODULE: CHATBOT SUPPORT ==================== */}
+          {activeTab === "chatbot" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <button
+                    onClick={() => setActiveTab("products")}
+                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
+                  >
+                    &larr; Back to Prime Products
+                  </button>
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>AI Chatbot Support Assistant</h2>
+                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                    Configure automated 24/7 customer inquiry replies, tyre size advisor bot, and test replies.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
+                {/* Chatbot Config Settings */}
+                <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: "0 0 16px 0" }}>Chatbot Configuration</h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* Bot Toggle */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px", borderRadius: "12px", background: "#f8fafc", border: "1px solid #cbd5e1" }}>
+                      <div>
+                        <div style={{ fontWeight: "800", fontSize: "0.88rem", color: "#0f172a" }}>Chatbot Status</div>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Show floating AI assistant on customer website</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const next = !chatbotActive;
+                          setChatbotActive(next);
+                          if (onToggleChatbotEnabled) onToggleChatbotEnabled(next);
+                          triggerToast(`Chatbot is now ${next ? "Enabled" : "Disabled"}`);
+                        }}
+                        style={{ padding: "6px 14px", borderRadius: "8px", border: "none", background: chatbotActive ? "#10b981" : "#cbd5e1", color: "#ffffff", fontWeight: "800", fontSize: "0.8rem", cursor: "pointer" }}
+                      >
+                        {chatbotActive ? "Active ON" : "Disabled OFF"}
+                      </button>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Greeting Message</label>
+                      <textarea
+                        rows={3}
+                        value={chatbotGreeting}
+                        onChange={(e) => setChatbotGreeting(e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none", fontFamily: "inherit" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Human Fallback Hotline</label>
+                      <input
+                        type="text"
+                        value={chatbotPhone}
+                        onChange={(e) => setChatbotPhone(e.target.value)}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => triggerToast("Chatbot settings saved successfully!")}
+                      style={{ padding: "12px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      Save Configuration
+                    </button>
+                  </div>
+                </div>
+
+                {/* Interactive Test Simulator */}
+                <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", display: "flex", flexDirection: "column", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                    <Bot size={22} color="#10b981" />
+                    <div>
+                      <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Interactive Bot Simulator</h3>
+                      <div style={{ fontSize: "0.74rem", color: "#64748b" }}>Test AI responses in real-time</div>
+                    </div>
+                  </div>
+
+                  <div style={{ flexGrow: 1, minHeight: "220px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", padding: "10px", background: "#f8fafc", borderRadius: "12px", marginBottom: "14px" }}>
+                    {simulatedChatMessages.map((msg, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          alignSelf: msg.from === "user" ? "flex-end" : "flex-start",
+                          background: msg.from === "user" ? "#0f172a" : "#ffffff",
+                          color: msg.from === "user" ? "#ffffff" : "#0f172a",
+                          padding: "10px 14px",
+                          borderRadius: msg.from === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                          fontSize: "0.82rem",
+                          maxWidth: "85%",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                          border: msg.from === "bot" ? "1px solid #e2e8f0" : "none",
+                        }}
+                      >
+                        {msg.text}
+                      </div>
+                    ))}
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!testChatInput.trim()) return;
+                      const userMsg = testChatInput;
+                      setSimulatedChatMessages((prev) => [...prev, { from: "user", text: userMsg }]);
+                      setTestChatInput("");
+
+                      setTimeout(() => {
+                        let reply = "I can help check pricing and schedule a service appointment for you at our Sadguru Tyres Pune workshop!";
+                        if (userMsg.toLowerCase().includes("align")) reply = "Our 3D Laser Alignment is ₹2,200 with 30-min precision calibration. Would you like to book now?";
+                        else if (userMsg.toLowerCase().includes("michelin") || userMsg.toLowerCase().includes("apollo") || userMsg.toLowerCase().includes("price")) reply = "We have high performance Michelin, Apollo, and Bridgestone tyres in stock with warranty and instant fitting!";
+                        setSimulatedChatMessages((prev) => [...prev, { from: "bot", text: reply }]);
+                      }, 500);
+                    }}
+                    style={{ display: "flex", gap: "8px" }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Type a test customer message..."
+                      value={testChatInput}
+                      onChange={(e) => setTestChatInput(e.target.value)}
+                      style={{ flexGrow: 1, padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                    />
+                    <button
+                      type="submit"
+                      style={{ padding: "10px 16px", borderRadius: "10px", background: "#0f172a", color: "#ffffff", border: "none", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
+                    >
+                      Send
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: INVENTORY & CATALOG MANAGEMENT */}
+          {activeTab === "inventory" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Tyre Catalog Inventory</h2>
+                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                    Manage prices, stock levels, badges, specifications, and Home screen showcase visibility.
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <button
+                    onClick={handleOpenAddModal}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 20px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                      border: "none",
+                      color: "#ffffff",
+                      fontWeight: "700",
+                      fontSize: "0.88rem",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                    }}
+                  >
+                    <Plus size={16} />
+                    <span>Add New Product</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 16px",
+                  borderRadius: "14px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  marginBottom: "16px",
+                  boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, position: "relative" }}>
+                  <Search size={18} color="#64748b" style={{ flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Search tyres by model name, brand, vehicle type, or category..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      outline: "none",
+                      fontSize: "0.88rem",
+                      color: "#0f172a",
+                      background: "transparent",
+                    }}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      style={{
+                        background: "#f1f5f9",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "22px",
+                        height: "22px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#64748b",
+                        cursor: "pointer",
+                      }}
+                      title="Clear search"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                {searchTerm && (
+                  <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: "600", whiteSpace: "nowrap" }}>
+                    {filteredTyres.length} {filteredTyres.length === 1 ? "product" : "products"} found
+                  </div>
+                )}
               </div>
 
               {/* Inventory Table */}
@@ -2007,72 +3353,190 @@ export default function AdminLayout({
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#64748b", fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      <th style={{ padding: "16px 20px" }}>Product</th>
-                      <th style={{ padding: "16px 20px" }}>Vehicle & Type</th>
-                      <th style={{ padding: "16px 20px" }}>Size Specs</th>
-                      <th style={{ padding: "16px 20px" }}>Price (INR)</th>
-                      <th style={{ padding: "16px 20px" }}>Stock</th>
-                      <th style={{ padding: "16px 20px" }}>Badge</th>
-                      <th style={{ padding: "16px 20px", textAlign: "right" }}>Actions</th>
+                      <th style={{ padding: "16px 20px", width: "42%" }}>Product</th>
+                      <th style={{ padding: "16px 20px", width: "24%" }}>Vehicle & Type</th>
+                      <th style={{ padding: "16px 20px", textAlign: "center", width: "18%" }}>Show on Home</th>
+                      <th style={{ padding: "16px 20px", textAlign: "right", width: "16%" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedTyres.map((tyre) => (
-                      <tr key={tyre.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ padding: "16px 20px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                            <img src={tyre.image} alt={tyre.name} style={{ width: "48px", height: "48px", borderRadius: "10px", objectFit: "cover", border: "1px solid #cbd5e1" }} />
-                            <div>
-                              <div style={{ fontWeight: "700", color: "#0f172a", fontSize: "0.95rem" }}>{tyre.name}</div>
-                              <div style={{ fontSize: "0.76rem", color: "#64748b" }}>{tyre.brand}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: "16px 20px", color: "#334155" }}>
-                          <div>{tyre.vehicleType}</div>
-                          <div style={{ fontSize: "0.76rem", color: "#64748b" }}>{tyre.category}</div>
-                        </td>
-                        <td style={{ padding: "16px 20px", fontWeight: "700", color: "#0f172a" }}>
-                          {tyre.width}/{tyre.profile} R{tyre.rimSize}
-                        </td>
-                        <td style={{ padding: "16px 20px", fontWeight: "800", color: "#ef4444" }}>
-                          ₹{(tyre.priceINR || 12000).toLocaleString("en-IN")}
-                        </td>
-                        <td style={{ padding: "16px 20px" }}>
-                          <span style={{ padding: "4px 10px", borderRadius: "999px", background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#0f172a", fontWeight: "700", fontSize: "0.76rem" }}>
-                            {tyre.stock || 45} Units
-                          </span>
-                        </td>
-                        <td style={{ padding: "16px 20px" }}>
-                          <span style={{ padding: "4px 10px", borderRadius: "999px", background: "#fef2f2", border: "1px solid #fecaca", color: "#ef4444", fontWeight: "700", fontSize: "0.74rem" }}>
-                            {tyre.badge || "Featured"}
-                          </span>
-                        </td>
-                        <td style={{ padding: "16px 20px", textAlign: "right" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-                            <button
-                              onClick={() => handleOpenEditModal(tyre)}
-                              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff", color: "#0f172a", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}
-                            >
-                              <Edit size={14} /> Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                onDeleteTyre(tyre.id);
-                                triggerToast(`Deleted "${tyre.name}" from inventory`);
+                    {paginatedTyres.map((tyre) => {
+                      const isVisibleOnHome = tyre.showOnHome !== false && tyre.show_on_home !== false && tyre.visual_specs?.show_on_home !== false;
+                      return (
+                        <tr
+                          key={tyre.id}
+                          style={{
+                            borderBottom: "1px solid #e2e8f0",
+                            transition: "background-color 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        >
+                          <td style={{ padding: "14px 20px" }}>
+                            <div
+                              onClick={() => setSelectedDetailTyre(tyre)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "14px",
+                                cursor: "pointer",
+                                width: "fit-content",
                               }}
-                              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #fecaca", background: "#fef2f2", color: "#ef4444", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}
+                              title="Click to view full specifications, price, stock & details"
                             >
-                              <Trash2 size={14} /> Delete
+                              <img
+                                src={tyre.image || DEFAULT_TYRE_IMAGE}
+                                alt={tyre.name}
+                                style={{
+                                  width: "48px",
+                                  height: "48px",
+                                  borderRadius: "10px",
+                                  objectFit: "cover",
+                                  border: "1px solid #cbd5e1",
+                                  background: "#f1f5f9",
+                                  transition: "transform 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                              />
+                              <div>
+                                <div
+                                  style={{
+                                    fontWeight: "700",
+                                    color: "#0f172a",
+                                    fontSize: "0.95rem",
+                                    transition: "color 0.2s ease",
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                                  onMouseLeave={(e) => (e.currentTarget.style.color = "#0f172a")}
+                                >
+                                  {tyre.name}
+                                </div>
+                                <div style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "2px" }}>
+                                  {tyre.brand || "Sadguru Apex"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td style={{ padding: "14px 20px", color: "#334155" }}>
+                            <div style={{ fontWeight: "600", color: "#0f172a" }}>{tyre.vehicleType || "Cars"}</div>
+                            <div style={{ fontSize: "0.76rem", color: "#64748b" }}>{tyre.category || "Passenger Tyre"}</div>
+                          </td>
+
+                          <td style={{ padding: "14px 20px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newStatus = !isVisibleOnHome;
+                                onUpdateTyre({
+                                  ...tyre,
+                                  showOnHome: newStatus,
+                                  show_on_home: newStatus,
+                                  visual_specs: {
+                                    ...(tyre.visual_specs || {}),
+                                    show_on_home: newStatus,
+                                  },
+                                });
+                                triggerToast(`"${tyre.name}" is now ${newStatus ? "Visible" : "Hidden"} on Home screen`);
+                              }}
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: "9999px",
+                                border: isVisibleOnHome ? "1px solid #86efac" : "1px solid #cbd5e1",
+                                background: isVisibleOnHome ? "#f0fdf4" : "#f8fafc",
+                                color: isVisibleOnHome ? "#15803d" : "#64748b",
+                                fontWeight: "700",
+                                fontSize: "0.76rem",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                transition: "all 0.2s ease",
+                                whiteSpace: "nowrap",
+                              }}
+                              title="Click to toggle visibility on Home Screen"
+                            >
+                              <span
+                                style={{
+                                  width: "8px",
+                                  height: "8px",
+                                  borderRadius: "50%",
+                                  background: isVisibleOnHome ? "#22c55e" : "#94a3b8",
+                                }}
+                              />
+                              {isVisibleOnHome ? "Visible on Home" : "Hidden"}
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+
+                          <td style={{ padding: "14px 20px", textAlign: "right" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
+                              <button
+                                onClick={() => handleOpenEditModal(tyre)}
+                                style={{
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #cbd5e1",
+                                  background: "#ffffff",
+                                  color: "#0f172a",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  fontSize: "0.78rem",
+                                  fontWeight: "600",
+                                  transition: "all 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = "#0f172a";
+                                  e.currentTarget.style.background = "#f8fafc";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = "#cbd5e1";
+                                  e.currentTarget.style.background = "#ffffff";
+                                }}
+                              >
+                                <Edit size={14} /> Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  onDeleteTyre(tyre.id);
+                                  triggerToast(`Deleted "${tyre.name}" from inventory`);
+                                }}
+                                style={{
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #fecaca",
+                                  background: "#fef2f2",
+                                  color: "#ef4444",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  fontSize: "0.78rem",
+                                  fontWeight: "600",
+                                  transition: "all 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = "#fee2e2";
+                                  e.currentTarget.style.borderColor = "#ef4444";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = "#fef2f2";
+                                  e.currentTarget.style.borderColor = "#fecaca";
+                                }}
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
-                {/* Pagination Bar - 5 products per page */}
+                {/* Pagination Bar */}
                 <div
                   style={{
                     display: "flex",
@@ -2085,16 +3549,43 @@ export default function AdminLayout({
                     gap: "12px",
                   }}
                 >
-                  <div style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: "500" }}>
-                    Showing{" "}
-                    <strong style={{ color: "#0f172a" }}>
-                      {filteredTyres.length === 0 ? 0 : (currentInventoryPage - 1) * ITEMS_PER_PAGE + 1}
-                    </strong>{" "}
-                    to{" "}
-                    <strong style={{ color: "#0f172a" }}>
-                      {Math.min(currentInventoryPage * ITEMS_PER_PAGE, filteredTyres.length)}
-                    </strong>{" "}
-                    of <strong style={{ color: "#0f172a" }}>{filteredTyres.length}</strong> products
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                    <div style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: "500" }}>
+                      Showing{" "}
+                      <strong style={{ color: "#0f172a" }}>
+                        {filteredTyres.length === 0 ? 0 : (currentInventoryPage - 1) * ITEMS_PER_PAGE + 1}
+                      </strong>{" "}
+                      to{" "}
+                      <strong style={{ color: "#0f172a" }}>
+                        {Math.min(currentInventoryPage * ITEMS_PER_PAGE, filteredTyres.length)}
+                      </strong>{" "}
+                      of <strong style={{ color: "#0f172a" }}>{filteredTyres.length}</strong> products
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", color: "#64748b" }}>
+                      <span>Per page:</span>
+                      <select
+                        value={inventoryItemsPerPage}
+                        onChange={(e) => setInventoryItemsPerPage(Number(e.target.value))}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          border: "1px solid #cbd5e1",
+                          background: "#f8fafc",
+                          color: "#0f172a",
+                          fontSize: "0.8rem",
+                          fontWeight: "600",
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value={5}>5 per page</option>
+                        <option value={6}>6 per page (Home Set)</option>
+                        <option value={10}>10 per page</option>
+                        <option value={20}>20 per page</option>
+                        <option value={100}>All products</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -2175,25 +3666,44 @@ export default function AdminLayout({
                     Manage global tyre manufacturer logos, taglines, and brand showcase featured on the live store homepage.
                   </p>
                 </div>
-                <button
-                  onClick={handleOpenAddBrandModal}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 20px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                    border: "none",
-                    color: "#ffffff",
-                    fontWeight: "700",
-                    fontSize: "0.88rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Plus size={16} />
-                  <span>Add New Brand</span>
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      fontSize: "0.78rem",
+                      fontWeight: "700",
+                      background: (brandsList || []).length >= 6 ? "#fef2f2" : "#f1f5f9",
+                      color: (brandsList || []).length >= 6 ? "#ef4444" : "#475569",
+                      padding: "6px 14px",
+                      borderRadius: "999px",
+                      border: (brandsList || []).length >= 6 ? "1px solid #fecaca" : "1px solid #cbd5e1",
+                    }}
+                  >
+                    {(brandsList || []).length} / 6 Partner Brands {(brandsList || []).length >= 6 ? "(Showcase Full)" : "Max"}
+                  </div>
+
+                  {(brandsList || []).length < 6 && (
+                    <button
+                      onClick={handleOpenAddBrandModal}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "10px 20px",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                        border: "none",
+                        color: "#ffffff",
+                        fontWeight: "700",
+                        fontSize: "0.88rem",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                      }}
+                    >
+                      <Plus size={16} />
+                      <span>Add New Brand</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Brands Grid */}
@@ -2262,30 +3772,33 @@ export default function AdminLayout({
                     Manage specialized workshop offerings, pricing (₹), estimated duration, and availability status.
                   </p>
                 </div>
-                <button
-                  onClick={handleOpenAddServiceModal}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 20px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                    border: "none",
-                    color: "#ffffff",
-                    fontWeight: "700",
-                    fontSize: "0.88rem",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
-                  }}
-                >
-                  <Plus size={16} />
-                  <span>Add New Service</span>
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  {/* Add New Service Button */}
+                  <button
+                    onClick={handleOpenAddServiceModal}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 20px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                      border: "none",
+                      color: "#ffffff",
+                      fontWeight: "700",
+                      fontSize: "0.88rem",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                    }}
+                  >
+                    <Plus size={16} />
+                    <span>Add New Service</span>
+                  </button>
+                </div>
               </div>
 
               {/* Service Stat Badges */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "24px" }}>
                 <div style={{ background: "#ffffff", borderRadius: "16px", padding: "18px 20px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)" }}>
                   <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Total Services</div>
                   <div style={{ fontSize: "1.6rem", fontWeight: "800", color: "#0f172a", marginTop: "4px" }}>{(servicesList || []).length}</div>
@@ -2297,9 +3810,10 @@ export default function AdminLayout({
                   </div>
                 </div>
                 <div style={{ background: "#ffffff", borderRadius: "16px", padding: "18px 20px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)" }}>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Service Categories</div>
-                  <div style={{ fontSize: "1.6rem", fontWeight: "800", color: "#0f172a", marginTop: "4px" }}>
-                    {[...new Set((servicesList || []).map(s => s.category))].length}
+                  <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Featured on Home</div>
+                  <div style={{ fontSize: "1.6rem", fontWeight: "800", color: "#059669", marginTop: "4px", display: "flex", alignItems: "baseline", gap: "6px" }}>
+                    <span>{(servicesList || []).filter(s => Boolean(s.showOnHome ?? s.show_on_home)).length}</span>
+                    <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "600" }}>/ 3 max</span>
                   </div>
                 </div>
                 <div style={{ background: "#ffffff", borderRadius: "16px", padding: "18px 20px", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)" }}>
@@ -2400,10 +3914,33 @@ export default function AdminLayout({
                       {/* Service Info Body */}
                       <div style={{ padding: "20px", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                         <div>
-                          {/* Badges Header: Category & Status */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                            <div style={{ background: "#0f172a", color: "#ffffff", fontSize: "0.72rem", fontWeight: "700", padding: "4px 10px", borderRadius: "999px", letterSpacing: "0.04em" }}>
-                              {service.category || "Tyre Care"}
+                          {/* Badges Header: Category, Show on Home & Status */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", gap: "8px", flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                              <div style={{ background: "#0f172a", color: "#ffffff", fontSize: "0.72rem", fontWeight: "700", padding: "4px 10px", borderRadius: "999px", letterSpacing: "0.04em" }}>
+                                {service.category || "Tyre Care"}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleServiceShowOnHome(service)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "3px 10px",
+                                  borderRadius: "999px",
+                                  fontSize: "0.72rem",
+                                  fontWeight: "700",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s ease",
+                                  background: Boolean(service.showOnHome ?? service.show_on_home) ? "#ecfdf5" : "#f8fafc",
+                                  color: Boolean(service.showOnHome ?? service.show_on_home) ? "#059669" : "#64748b",
+                                  border: Boolean(service.showOnHome ?? service.show_on_home) ? "1px solid #a7f3d0" : "1px solid #cbd5e1",
+                                }}
+                                title="Click to toggle Show on Home Screen"
+                              >
+                                <span>{Boolean(service.showOnHome ?? service.show_on_home) ? "✓ On Home" : "Hidden"}</span>
+                              </button>
                             </div>
                             <div
                               style={{
@@ -2421,11 +3958,11 @@ export default function AdminLayout({
 
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "8px" }}>
                             <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: 0, lineHeight: 1.3 }}>
-                              {service.name}
+                              {service.title || service.name}
                             </h3>
                           </div>
                           <p style={{ fontSize: "0.83rem", color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                            {service.description || "No description provided."}
+                            {service.description || service.shortDesc || "No description provided."}
                           </p>
                         </div>
 
@@ -2815,29 +4352,228 @@ export default function AdminLayout({
           {/* TAB 4: QUOTES MANAGER */}
           {activeTab === "quotes" && (
             <div>
-              <div style={{ marginBottom: "24px" }}>
-                <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Wholesale & Fleet Quote Requests</h2>
-                <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                  Review official quote requests submitted by fleet managers and B2B buyers.
-                </p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Wholesale & Fleet Quote Requests</h2>
+                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                    Review official quote requests submitted by fleet managers and B2B buyers.
+                  </p>
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: "700",
+                    background: "#f1f5f9",
+                    color: "#0f172a",
+                    padding: "6px 14px",
+                    borderRadius: "999px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                >
+                  {filteredQuotes.length} Total Quote Requests
+                </div>
               </div>
 
-              <div style={{ borderRadius: "20px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", padding: "24px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {quotesList.map((q, idx) => (
-                    <div key={idx} style={{ padding: "20px", borderRadius: "16px", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontWeight: "800", fontSize: "1.05rem", color: "#0f172a" }}>{q.tyreName || "ApexSport Pro 4S"}</div>
-                        <div style={{ fontSize: "0.84rem", color: "#64748b", marginTop: "2px" }}>
-                          Quantity: {q.quantity || 4} units • Customer Email: <span style={{ color: "#ef4444" }}>{q.email || "fleet@logistics.in"}</span>
+              {/* Search Bar for Quotes */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 16px",
+                  borderRadius: "14px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  marginBottom: "16px",
+                  boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, position: "relative" }}>
+                  <Search size={18} color="#64748b" style={{ flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Search quote requests by tyre model, customer email, or total amount..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      outline: "none",
+                      fontSize: "0.88rem",
+                      color: "#0f172a",
+                      background: "transparent",
+                    }}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      style={{
+                        background: "#f1f5f9",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "22px",
+                        height: "22px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#64748b",
+                        cursor: "pointer",
+                      }}
+                      title="Clear search"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                {searchTerm && (
+                  <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: "600", whiteSpace: "nowrap" }}>
+                    {filteredQuotes.length} {filteredQuotes.length === 1 ? "quote" : "quotes"} found
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderRadius: "20px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", overflow: "hidden" }}>
+                <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {paginatedQuotes.length === 0 ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+                      No quote requests found matching your search.
+                    </div>
+                  ) : (
+                    paginatedQuotes.map((q, idx) => (
+                      <div key={q.id || idx} style={{ padding: "20px", borderRadius: "16px", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", transition: "all 0.2s ease" }}>
+                        <div>
+                          <div style={{ fontWeight: "800", fontSize: "1.05rem", color: "#0f172a" }}>{q.tyreName || "ApexSport Pro 4S"}</div>
+                          <div style={{ fontSize: "0.84rem", color: "#64748b", marginTop: "2px" }}>
+                            Quantity: <strong style={{ color: "#0f172a" }}>{q.quantity || 4} units</strong> • Customer Email: <span style={{ color: "#ef4444", fontWeight: "600" }}>{q.email || "fleet@logistics.in"}</span>
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: "800", fontSize: "1.2rem", color: "#0f172a" }}>
+                          {q.totalFormatted || (q.totalINR ? `₹${Number(q.totalINR).toLocaleString("en-IN")}` : "₹75,600")}
                         </div>
                       </div>
-                      <div style={{ fontWeight: "800", fontSize: "1.2rem", color: "#0f172a" }}>
-                        {q.totalFormatted || "₹75,600"}
+                    ))
+                  )}
+                </div>
+
+                {/* Pagination Bar */}
+                {filteredQuotes.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "16px 24px",
+                      background: "#ffffff",
+                      borderTop: "1px solid #e2e8f0",
+                      flexWrap: "wrap",
+                      gap: "12px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                      <div style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: "500" }}>
+                        Showing{" "}
+                        <strong style={{ color: "#0f172a" }}>
+                          {(currentQuotesPage - 1) * QUOTES_PER_PAGE + 1}
+                        </strong>{" "}
+                        to{" "}
+                        <strong style={{ color: "#0f172a" }}>
+                          {Math.min(currentQuotesPage * QUOTES_PER_PAGE, filteredQuotes.length)}
+                        </strong>{" "}
+                        of <strong style={{ color: "#0f172a" }}>{filteredQuotes.length}</strong> quote requests
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", color: "#64748b" }}>
+                        <span>Per page:</span>
+                        <select
+                          value={quotesItemsPerPage}
+                          onChange={(e) => setQuotesItemsPerPage(Number(e.target.value))}
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            border: "1px solid #cbd5e1",
+                            background: "#f8fafc",
+                            color: "#0f172a",
+                            fontSize: "0.8rem",
+                            fontWeight: "600",
+                            outline: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option value={3}>3 per page</option>
+                          <option value={5}>5 per page</option>
+                          <option value={10}>10 per page</option>
+                          <option value={20}>20 per page</option>
+                        </select>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button
+                        disabled={currentQuotesPage <= 1}
+                        onClick={() => setQuotesPage((prev) => Math.max(prev - 1, 1))}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: "8px",
+                          border: "1px solid #cbd5e1",
+                          background: currentQuotesPage <= 1 ? "#f1f5f9" : "#ffffff",
+                          color: currentQuotesPage <= 1 ? "#94a3b8" : "#0f172a",
+                          cursor: currentQuotesPage <= 1 ? "not-allowed" : "pointer",
+                          fontWeight: "600",
+                          fontSize: "0.82rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <ChevronLeft size={16} /> Previous
+                      </button>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        {Array.from({ length: totalQuotesPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button
+                            key={pageNum}
+                            onClick={() => setQuotesPage(pageNum)}
+                            style={{
+                              width: "34px",
+                              height: "34px",
+                              borderRadius: "8px",
+                              border: pageNum === currentQuotesPage ? "none" : "1px solid #cbd5e1",
+                              background: pageNum === currentQuotesPage ? "linear-gradient(135deg, #ef4444, #dc2626)" : "#ffffff",
+                              color: pageNum === currentQuotesPage ? "#ffffff" : "#0f172a",
+                              fontWeight: "700",
+                              fontSize: "0.82rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {pageNum}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        disabled={currentQuotesPage >= totalQuotesPages}
+                        onClick={() => setQuotesPage((prev) => Math.min(prev + 1, totalQuotesPages))}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: "8px",
+                          border: "1px solid #cbd5e1",
+                          background: currentQuotesPage >= totalQuotesPages ? "#f1f5f9" : "#ffffff",
+                          color: currentQuotesPage >= totalQuotesPages ? "#94a3b8" : "#0f172a",
+                          cursor: currentQuotesPage >= totalQuotesPages ? "not-allowed" : "pointer",
+                          fontWeight: "600",
+                          fontSize: "0.82rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -3111,216 +4847,416 @@ export default function AdminLayout({
             </div>
           )}
 
-          {/* TAB: CHATBOT AI ASSISTANT MANAGER */}
-          {activeTab === "chatbot" && (
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", flexWrap: "wrap", gap: "20px" }}>
-                <div>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
-                    AI Tyre Specialist & Chatbot Management
-                  </h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Monitor automated customer consultations, virtual assistant accuracy, and configure quick actions.
-                  </p>
-                </div>
-                
-                {/* Chatbot Master Toggle */}
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", background: "#ffffff", padding: "12px 20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)" }}>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: "0.9rem", fontWeight: "800", color: "#0f172a" }}>Chatbot Status</span>
-                    <span style={{ fontSize: "0.75rem", color: isChatbotEnabled ? "#22c55e" : "#ef4444", fontWeight: "700" }}>
-                      {isChatbotEnabled ? "Active & Visible" : "Disabled (Hidden)"}
-                    </span>
-                  </div>
-                  <label style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", cursor: "pointer" }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isChatbotEnabled} 
-                      onChange={onToggleChatbotEnabled}
-                      style={{ opacity: 0, width: 0, height: 0 }} 
-                    />
-                    <span 
-                      style={{
-                        position: "absolute",
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: isChatbotEnabled ? "#22c55e" : "#cbd5e1",
-                        borderRadius: "26px",
-                        transition: ".4s",
-                      }}
-                    >
-                      <span 
-                        style={{
-                          position: "absolute",
-                          content: '""',
-                          height: "18px",
-                          width: "18px",
-                          left: isChatbotEnabled ? "28px" : "4px",
-                          bottom: "4px",
-                          backgroundColor: "white",
-                          borderRadius: "50%",
-                          transition: ".4s",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                        }}
-                      />
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Chatbot Overview Cards */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: "18px",
-                  marginBottom: "28px",
-                }}
-              >
-                <div
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: "16px",
-                    padding: "20px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "0.84rem", color: "#64748b", fontWeight: "600" }}>Total AI Consultations</span>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6" }}>
-                      <Bot size={18} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#0f172a" }}>1,482</div>
-                  <div style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: "700", marginTop: "4px" }}>↑ +18.4% this week</div>
-                </div>
-
-                <div
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: "16px",
-                    padding: "20px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "0.84rem", color: "#64748b", fontWeight: "600" }}>Bookings Triggered</span>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
-                      <CalendarCheck size={18} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#0f172a" }}>348</div>
-                  <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "600", marginTop: "4px" }}>23.4% conversion rate</div>
-                </div>
-
-                <div
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: "16px",
-                    padding: "20px",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 4px 15px rgba(15, 23, 42, 0.03)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "0.84rem", color: "#64748b", fontWeight: "600" }}>AI Knowledge Accuracy</span>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", color: "#22c55e" }}>
-                      <Zap size={18} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#0f172a" }}>99.2%</div>
-                  <div style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: "700", marginTop: "4px" }}>Active & Trained</div>
-                </div>
-              </div>
-
-              {/* Bot Settings & Prompts Card */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "20px",
-                  border: "1px solid #e2e8f0",
-                  padding: "24px",
-                  boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)",
-                }}
-              >
-                <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: "0 0 16px 0" }}>
-                  AI Assistant Quick Actions & Auto-Prompts
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {[
-                    { title: "🚗 Find Tyres for my car", target: "Launches Interactive Tyre Finder", status: "Active" },
-                    { title: "🔧 Book 3D Alignment", target: "Opens Service Appointment Booking", status: "Active" },
-                    { title: "💰 View Pricing & Offers", target: "Displays Best Deals & Warranty Info", status: "Active" },
-                    { title: "📞 Store Hours & Hotline", target: "Shows Workshop Location & Call Link", status: "Active" },
-                  ].map((prompt, pIdx) => (
-                    <div
-                      key={pIdx}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "14px 18px",
-                        background: "#f8fafc",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: "700", fontSize: "0.9rem", color: "#0f172a" }}>{prompt.title}</div>
-                        <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "2px" }}>{prompt.target}</div>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: "0.75rem",
-                          fontWeight: "800",
-                          padding: "4px 10px",
-                          borderRadius: "999px",
-                          background: "#dcfce7",
-                          color: "#166534",
-                        }}
-                      >
-                        {prompt.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: SHOP SETTINGS */}
+          {/* TAB: SHOP SETTINGS */}
           {activeTab === "settings" && (
-            <div style={{ maxWidth: "700px" }}>
+            <div style={{ maxWidth: "1200px" }}>
+              {/* Header & Action Bar */}
               <div style={{ marginBottom: "24px" }}>
-                <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Store & Operations Settings</h2>
-                <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                  Configure shop operational parameters, contact hotline, and global currency defaults.
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.72rem", fontWeight: "800", background: "#ecfdf5", color: "#059669", padding: "3px 10px", borderRadius: "999px", marginBottom: "6px", border: "1px solid #a7f3d0" }}>
+                  <Sparkles size={12} />
+                  <span>LIVE WEBSITE CONFIGURATION</span>
+                </div>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: 0, letterSpacing: "-0.02em" }}>
+                  Workshop & Concierge Settings
+                </h2>
+                <p style={{ fontSize: "0.86rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                  Configure workshop hub location, Google Maps directions link, phone hotlines, and operating hours dynamically.
                 </p>
               </div>
 
-              <div style={{ borderRadius: "20px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>Store Name</label>
-                  <input type="text" defaultValue="Sadguru Tyres & Mobility Solutions" style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", outline: "none" }} />
+              {/* Grid: Left = Form, Right = Live Website Preview */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "24px", alignItems: "start" }}>
+                
+                {/* LEFT: SETTINGS FORM */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  
+                  {/* Card 1: Workshop Location & Google Maps */}
+                  <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", padding: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#fef2f2", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <MapPin size={18} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: "0.98rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                          Workshop Hub & Location
+                        </h3>
+                        <p style={{ fontSize: "0.76rem", color: "#64748b", margin: 0 }}>
+                          Physical address and Google Maps directions link
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Workshop Hub Title
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.hubName || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, hubName: e.target.value })}
+                          placeholder="e.g. Main Workshop Hub"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Store Business Name
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.storeName || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, storeName: e.target.value })}
+                          placeholder="e.g. Sadguru Tyres & Alignment Center"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Full Workshop Address (Displayed on Contact Page)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={settingsForm.address || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })}
+                          placeholder="Full street address, landmark, city, state, pin"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none", resize: "vertical", fontFamily: "inherit" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Short Footer Address
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.shortAddress || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, shortAddress: e.target.value })}
+                          placeholder="e.g. Near Bus Stand, Main Road, Pune, Maharashtra 411001"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                          <label style={{ fontSize: "0.78rem", fontWeight: "700", color: "#334155" }}>
+                            Google Maps Directions URL
+                          </label>
+                          {settingsForm.googleMapsUrl && (
+                            <a
+                              href={settingsForm.googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: "0.74rem", color: "#ef4444", fontWeight: "700", display: "inline-flex", alignItems: "center", gap: "3px", textDecoration: "none" }}
+                            >
+                              Test Link <ExternalLink size={11} />
+                            </a>
+                          )}
+                        </div>
+                        <input
+                          type="url"
+                          value={settingsForm.googleMapsUrl || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, googleMapsUrl: e.target.value })}
+                          placeholder="https://maps.app.goo.gl/..."
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Phone Hotlines & Support */}
+                  <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", padding: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#eff6ff", color: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Phone size={18} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: "0.98rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                          Phone Hotlines & Customer Care
+                        </h3>
+                        <p style={{ fontSize: "0.76rem", color: "#64748b", margin: 0 }}>
+                          Toll-free helpline and direct workshop telephone lines
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Toll-Free Helpline (Navbar & Hero Pills)
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.tollFreePhone || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, tollFreePhone: e.target.value })}
+                          placeholder="e.g. 1800 15 11 00"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Direct Telephone Lines
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.directPhone || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, directPhone: e.target.value })}
+                          placeholder="e.g. +91 98220 12345 / 020 2543 8899"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Customer Support Email
+                        </label>
+                        <input
+                          type="email"
+                          value={settingsForm.email || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, email: e.target.value })}
+                          placeholder="e.g. care@sadgurutyres.com"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Operating Hours */}
+                  <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)", padding: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#fef3c7", color: "#d97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Clock size={18} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: "0.98rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                          Workshop Operating Schedule
+                        </h3>
+                        <p style={{ fontSize: "0.76rem", color: "#64748b", margin: 0 }}>
+                          Opening and closing hours displayed to visiting motorists
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Weekday Timings (Monday – Saturday)
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.weekdayHours || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, weekdayHours: e.target.value })}
+                          placeholder="e.g. Mon - Sat: 9:00 AM - 8:30 PM"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Sunday / Weekend Timings
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.sundayHours || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, sundayHours: e.target.value })}
+                          placeholder="e.g. Sun: 10:00 AM - 4:00 PM (Open 7 Days)"
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                          Express Service Turnaround Tagline
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.expressTurnaround || ""}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, expressTurnaround: e.target.value })}
+                          placeholder="e.g. Express 30-minute fitment & alignment."
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", fontSize: "0.88rem", outline: "none" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Settings Action Row */}
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={handleResetStoreSettings}
+                      style={{
+                        padding: "14px 20px",
+                        borderRadius: "14px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        color: "#475569",
+                        fontWeight: "700",
+                        fontSize: "0.9rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                      title="Reset to factory defaults"
+                    >
+                      <RotateCcw size={15} />
+                      <span>Reset Defaults</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSavingSettings}
+                      onClick={handleSaveStoreSettings}
+                      style={{
+                        flex: 1,
+                        padding: "14px 24px",
+                        borderRadius: "14px",
+                        background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                        border: "none",
+                        color: "#ffffff",
+                        fontWeight: "800",
+                        fontSize: "0.95rem",
+                        cursor: isSavingSettings ? "not-allowed" : "pointer",
+                        boxShadow: "0 6px 20px rgba(239, 68, 68, 0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "10px",
+                        minWidth: "220px",
+                      }}
+                    >
+                      <CheckCircle2 size={18} />
+                      <span>{isSavingSettings ? "Saving Changes..." : "Save Store Settings"}</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>Customer Hotline Phone</label>
-                  <input type="text" defaultValue="+91 98220 12345 / 020 2543 8899" style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", outline: "none" }} />
+                {/* RIGHT: LIVE REAL-TIME WEBSITE PREVIEW */}
+                <div style={{ position: "sticky", top: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ background: "#0f172a", borderRadius: "18px", padding: "14px 18px", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Eye size={16} color="#38bdf8" />
+                      <span style={{ fontSize: "0.84rem", fontWeight: "800" }}>Live Website Preview</span>
+                    </div>
+                    <span style={{ fontSize: "0.72rem", background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "3px 8px", borderRadius: "999px", fontWeight: "700" }}>
+                      Updates as you type
+                    </span>
+                  </div>
+
+                  {/* PREVIEW CARD: WORKSHOP & CONCIERGE INFO (Exact match to website card) */}
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "24px",
+                      padding: "28px",
+                      border: "1px solid #e2e8f0",
+                      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "20px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <h3 style={{ fontSize: "1.15rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>
+                        Workshop & Concierge Info
+                      </h3>
+                      <span style={{ fontSize: "0.68rem", fontWeight: "800", color: "#059669", background: "#ecfdf5", padding: "2px 8px", borderRadius: "999px", border: "1px solid #a7f3d0" }}>
+                        ● OPEN
+                      </span>
+                    </div>
+
+                    {/* Hub & Address */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                      <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <MapPin size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>
+                          {settingsForm.hubName || "Main Workshop Hub"}
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px", lineHeight: 1.5 }}>
+                          {settingsForm.address || "Sadguru Tyres & Alignment Center, Main Highway Junction, Pune, Maharashtra 411001"}
+                        </div>
+                        <a
+                          href={settingsForm.googleMapsUrl || "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "0.8rem",
+                            color: "#ef4444",
+                            fontWeight: "700",
+                            marginTop: "8px",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Open Directions on Google Maps <ExternalLink size={13} />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Phone Hotlines */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                      <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Phone size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>Phone Hotlines</div>
+                        <div style={{ fontSize: "0.85rem", color: "#334155", marginTop: "2px", fontWeight: "600" }}>
+                          Toll-Free: {settingsForm.tollFreePhone || "1800 15 11 00"}
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px" }}>
+                          Direct: {settingsForm.directPhone || "+91 98220 12345 / 020 2543 8899"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Workshop Hours */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                      <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Clock size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>Workshop Hours</div>
+                        <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px" }}>
+                          {settingsForm.weekdayHours || "Mon - Sat: 9:00 AM - 8:30 PM"}
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+                          {settingsForm.sundayHours || "Sun: 10:00 AM - 4:00 PM (Open 7 Days)"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PREVIEW CARD: FOOTER CONCIERGE PREVIEW */}
+                  <div style={{ background: "#ffffff", borderRadius: "18px", padding: "20px", border: "1px solid #e2e8f0", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                    <div style={{ fontSize: "0.78rem", fontWeight: "800", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px" }}>
+                      Footer Concierge Snippet Preview
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.84rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#0f172a", fontWeight: "700" }}>
+                        <Phone size={14} color="#ef4444" />
+                        <span>+91 {settingsForm.tollFreePhone || "1800 15 11 00"}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#475569" }}>
+                        <Mail size={14} color="#0f172a" />
+                        <span>{settingsForm.email || "care@sadgurutyres.com"}</span>
+                      </div>
+                      <div style={{ color: "#64748b", fontSize: "0.78rem", marginTop: "4px" }}>
+                        📍 {settingsForm.shortAddress || "Near Bus Stand, Main Road, Pune, Maharashtra 411001"}
+                      </div>
+                      <div style={{ color: "#94a3b8", fontSize: "0.74rem" }}>
+                        {settingsForm.weekdayHours || "Mon – Sat: 9 AM – 8 PM"} | {settingsForm.sundayHours || "Sun: 10 AM - 4 PM"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>Workshop Operating Hours</label>
-                  <input type="text" defaultValue="Mon - Sat: 9:00 AM - 8:30 PM | Sun: 10:00 AM - 4:00 PM" style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #cbd5e1", color: "#0f172a", outline: "none" }} />
-                </div>
-
-                <button
-                  onClick={() => triggerToast("Store settings saved successfully!")}
-                  style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "700", fontSize: "0.9rem", cursor: "pointer", width: "fit-content" }}
-                >
-                  Save Store Settings
-                </button>
               </div>
             </div>
           )}
@@ -3479,55 +5415,150 @@ export default function AdminLayout({
           <div
             style={{
               background: "#ffffff",
-              borderRadius: "24px",
-              padding: "32px",
-              maxWidth: "520px",
+              borderRadius: "20px",
+              padding: "24px",
+              maxWidth: "420px",
               width: "100%",
               boxShadow: "0 25px 50px rgba(15, 23, 42, 0.25)",
               border: "1px solid #e2e8f0",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
                 {editingSubadmin ? `Edit Sub-Admin "${editingSubadmin.name}"` : "Create Sub-Admin Account"}
               </h3>
-              <button onClick={() => setShowAddSubadminModal(false)} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer" }}>
-                <X size={20} />
+              <button onClick={() => setShowAddSubadminModal(false)} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: "4px" }}>
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveSubadminForm} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Full Name */}
               <div>
-                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Full Name *</label>
+                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                  Full Name *
+                </label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. Ramesh Kulkarni"
                   value={subadminForm.name}
-                  onChange={(e) => setSubadminForm({ ...subadminForm, name: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                  onChange={(e) => {
+                    setSubadminForm({ ...subadminForm, name: e.target.value });
+                    if (subadminFormErrors.name) setSubadminFormErrors({ ...subadminFormErrors, name: null });
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: subadminFormErrors.name ? "1.5px solid #ef4444" : "1px solid #cbd5e1",
+                    background: subadminFormErrors.name ? "#fff5f5" : "#ffffff",
+                    fontSize: "0.88rem",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
                 />
+                {subadminFormErrors.name && (
+                  <div style={{ color: "#ef4444", fontSize: "0.76rem", fontWeight: "600", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertCircle size={13} /> {subadminFormErrors.name}
+                  </div>
+                )}
               </div>
 
+              {/* Email Address */}
               <div>
-                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Email Address *</label>
+                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                  Email Address *
+                </label>
                 <input
                   type="email"
-                  required
                   placeholder="ramesh.k@sadgurutyres.com"
                   value={subadminForm.email}
-                  onChange={(e) => setSubadminForm({ ...subadminForm, email: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                  onChange={(e) => {
+                    setSubadminForm({ ...subadminForm, email: e.target.value });
+                    if (subadminFormErrors.email) setSubadminFormErrors({ ...subadminFormErrors, email: null });
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: subadminFormErrors.email ? "1.5px solid #ef4444" : "1px solid #cbd5e1",
+                    background: subadminFormErrors.email ? "#fff5f5" : "#ffffff",
+                    fontSize: "0.88rem",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
                 />
+                {subadminFormErrors.email && (
+                  <div style={{ color: "#ef4444", fontSize: "0.76rem", fontWeight: "600", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertCircle size={13} /> {subadminFormErrors.email}
+                  </div>
+                )}
               </div>
 
+              {/* Access Password with Eye Toggle */}
+              <div>
+                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                  {editingSubadmin ? "Access Password (Optional - leave blank to keep existing)" : "Access Password *"}
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Lock size={16} color="#94a3b8" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+                  <input
+                    type={showSubadminPassword ? "text" : "password"}
+                    placeholder={editingSubadmin ? "Enter new password (min. 6 characters)" : "Create login password (min. 6 characters)"}
+                    value={subadminForm.password}
+                    onChange={(e) => {
+                      setSubadminForm({ ...subadminForm, password: e.target.value });
+                      if (subadminFormErrors.password) setSubadminFormErrors({ ...subadminFormErrors, password: null });
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 38px 10px 36px",
+                      borderRadius: "10px",
+                      border: subadminFormErrors.password ? "1.5px solid #ef4444" : "1px solid #cbd5e1",
+                      background: subadminFormErrors.password ? "#fff5f5" : "#ffffff",
+                      fontSize: "0.88rem",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSubadminPassword(!showSubadminPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "transparent",
+                      border: "none",
+                      color: "#94a3b8",
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    title={showSubadminPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSubadminPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {subadminFormErrors.password && (
+                  <div style={{ color: "#ef4444", fontSize: "0.76rem", fontWeight: "600", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertCircle size={13} /> {subadminFormErrors.password}
+                  </div>
+                )}
+              </div>
+
+              {/* Role & Phone */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Assigned Role</label>
                   <select
                     value={subadminForm.role}
                     onChange={(e) => setSubadminForm({ ...subadminForm, role: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", background: "#ffffff", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", background: "#ffffff", outline: "none", boxSizing: "border-box" }}
                   >
                     <option value="Inventory Manager">Inventory Manager</option>
                     <option value="Service Operations Lead">Service Operations Lead</option>
@@ -3543,13 +5574,16 @@ export default function AdminLayout({
                     placeholder="+91 98220 12345"
                     value={subadminForm.phone}
                     onChange={(e) => setSubadminForm({ ...subadminForm, phone: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
               </div>
 
+              {/* Permissions */}
               <div>
-                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>Module Permissions</label>
+                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
+                  Module Permissions *
+                </label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   {[
                     { id: "inventory_read", label: "View Inventory" },
@@ -3563,15 +5597,24 @@ export default function AdminLayout({
                       <input
                         type="checkbox"
                         checked={subadminForm.permissions.includes(p.id)}
-                        onChange={() => togglePermission(p.id)}
+                        onChange={() => {
+                          togglePermission(p.id);
+                          if (subadminFormErrors.permissions) setSubadminFormErrors({ ...subadminFormErrors, permissions: null });
+                        }}
                         style={{ accentColor: "#ef4444" }}
                       />
                       <span>{p.label}</span>
                     </label>
                   ))}
                 </div>
+                {subadminFormErrors.permissions && (
+                  <div style={{ color: "#ef4444", fontSize: "0.76rem", fontWeight: "600", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertCircle size={13} /> {subadminFormErrors.permissions}
+                  </div>
+                )}
               </div>
 
+              {/* Modal Buttons */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
                 <button
                   type="button"
@@ -3582,7 +5625,7 @@ export default function AdminLayout({
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: "10px 22px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#ffffff", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
+                  style={{ padding: "10px 22px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#ffffff", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)" }}
                 >
                   Save Sub-Admin Account
                 </button>
@@ -4005,6 +6048,50 @@ export default function AdminLayout({
                 />
               </div>
 
+              {/* Show on Home Screen Toggle */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "#f8fafc", borderRadius: "12px", border: "1px solid #cbd5e1" }}>
+                <div>
+                  <div style={{ fontSize: "0.85rem", fontWeight: "700", color: "#0f172a" }}>Show on Home Screen</div>
+                  <div style={{ fontSize: "0.74rem", color: "#64748b" }}>Feature this tyre in the Flagship Performance Tyres section on the homepage.</div>
+                </div>
+                <label style={{ position: "relative", display: "inline-block", width: "44px", height: "24px", cursor: "pointer", flexShrink: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={tyreForm.showOnHome !== false}
+                    onChange={(e) => setTyreForm({ ...tyreForm, showOnHome: e.target.checked })}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      cursor: "pointer",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: tyreForm.showOnHome !== false ? "#ef4444" : "#cbd5e1",
+                      transition: ".3s",
+                      borderRadius: "24px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        content: '""',
+                        height: "18px",
+                        width: "18px",
+                        left: tyreForm.showOnHome !== false ? "22px" : "3px",
+                        bottom: "3px",
+                        backgroundColor: "white",
+                        transition: ".3s",
+                        borderRadius: "50%",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                      }}
+                    />
+                  </span>
+                </label>
+              </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "12px" }}>
                 <button
                   type="button"
@@ -4021,6 +6108,332 @@ export default function AdminLayout({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCT DETAILS POPUP MODAL */}
+      {selectedDetailTyre && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1050,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setSelectedDetailTyre(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#ffffff",
+              borderRadius: "24px",
+              maxWidth: "680px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.25)",
+              border: "1px solid #e2e8f0",
+              padding: "28px",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid #f1f5f9", paddingBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {selectedDetailTyre.brand || "Sadguru"}
+                    </span>
+                    {selectedDetailTyre.badge && (
+                      <span
+                        style={{
+                          padding: "2px 10px",
+                          borderRadius: "999px",
+                          background: "#fef2f2",
+                          border: "1px solid #fecaca",
+                          color: "#ef4444",
+                          fontWeight: "800",
+                          fontSize: "0.72rem",
+                        }}
+                      >
+                        {selectedDetailTyre.badge}
+                      </span>
+                    )}
+                  </div>
+                  <h3 style={{ fontSize: "1.35rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                    {selectedDetailTyre.name}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDetailTyre(null)}
+                style={{
+                  background: "#f1f5f9",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#64748b",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#e2e8f0";
+                  e.currentTarget.style.color = "#0f172a";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.color = "#64748b";
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Top Product Hero Showcase */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "160px 1fr",
+                gap: "20px",
+                padding: "16px",
+                background: "#f8fafc",
+                borderRadius: "18px",
+                border: "1px solid #e2e8f0",
+                marginBottom: "20px",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <img
+                  src={selectedDetailTyre.image || DEFAULT_TYRE_IMAGE}
+                  alt={selectedDetailTyre.name}
+                  style={{
+                    width: "140px",
+                    height: "140px",
+                    objectFit: "contain",
+                    borderRadius: "14px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    padding: "8px",
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "0.85rem", color: "#475569", lineHeight: "1.5", marginBottom: "12px" }}>
+                  {selectedDetailTyre.tagline ||
+                    selectedDetailTyre.description ||
+                    "Premium tyre engineered for superior road adhesion, responsive cornering, and reduced braking distances."}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  <span style={{ padding: "4px 10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #cbd5e1", fontSize: "0.78rem", fontWeight: "600", color: "#334155" }}>
+                    🚗 {selectedDetailTyre.vehicleType || "Cars"}
+                  </span>
+                  <span style={{ padding: "4px 10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #cbd5e1", fontSize: "0.78rem", fontWeight: "600", color: "#334155" }}>
+                    🏷️ {selectedDetailTyre.category || "Passenger Tyre"}
+                  </span>
+                  <span style={{ padding: "4px 10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #cbd5e1", fontSize: "0.78rem", fontWeight: "600", color: "#334155" }}>
+                    ⚡ {selectedDetailTyre.performanceLevel || selectedDetailTyre.tyreType || "High Performance"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Core Specifications Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px", marginBottom: "20px" }}>
+              {/* Size Specification */}
+              <div style={{ padding: "14px 16px", borderRadius: "14px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.03)" }}>
+                <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
+                  Size Specification
+                </div>
+                <div style={{ fontSize: "1.25rem", fontWeight: "800", color: "#0f172a" }}>
+                  {selectedDetailTyre.width || "—"}/{selectedDetailTyre.profile || "—"} R{selectedDetailTyre.rimSize || "—"}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "2px" }}>
+                  Width: {selectedDetailTyre.width || "—"}mm • Ratio: {selectedDetailTyre.profile || "—"} • Rim: {selectedDetailTyre.rimSize || "—"}"
+                </div>
+              </div>
+
+              {/* Price */}
+              <div style={{ padding: "14px 16px", borderRadius: "14px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.03)" }}>
+                <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
+                  Price (INR & USD)
+                </div>
+                <div style={{ fontSize: "1.25rem", fontWeight: "800", color: "#ef4444" }}>
+                  ₹{(selectedDetailTyre.priceINR || 12000).toLocaleString("en-IN")}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "2px" }}>
+                  {selectedDetailTyre.priceUSD ? `Approx. $${selectedDetailTyre.priceUSD} USD` : "All inclusive store pricing"}
+                </div>
+              </div>
+
+              {/* Stock Quantity */}
+              <div style={{ padding: "14px 16px", borderRadius: "14px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.03)" }}>
+                <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
+                  Inventory Stock
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "1.25rem", fontWeight: "800", color: "#0f172a" }}>
+                    {selectedDetailTyre.stock ?? 45} Units
+                  </span>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontSize: "0.7rem",
+                      fontWeight: "700",
+                      background: (selectedDetailTyre.stock ?? 45) > 10 ? "#ecfdf5" : (selectedDetailTyre.stock ?? 45) > 0 ? "#fffbeb" : "#fef2f2",
+                      color: (selectedDetailTyre.stock ?? 45) > 10 ? "#059669" : (selectedDetailTyre.stock ?? 45) > 0 ? "#d97706" : "#dc2626",
+                      border: (selectedDetailTyre.stock ?? 45) > 10 ? "1px solid #a7f3d0" : (selectedDetailTyre.stock ?? 45) > 0 ? "1px solid #fde68a" : "1px solid #fecaca",
+                    }}
+                  >
+                    {(selectedDetailTyre.stock ?? 45) > 10 ? "In Stock" : (selectedDetailTyre.stock ?? 45) > 0 ? "Low Stock" : "Out of Stock"}
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "2px" }}>
+                  Available in Sadguru physical store
+                </div>
+              </div>
+
+              {/* Badge & Home Visibility */}
+              <div style={{ padding: "14px 16px", borderRadius: "14px", background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 6px rgba(15, 23, 42, 0.03)" }}>
+                <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
+                  Product Badge & Showcase
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      color: "#ef4444",
+                      fontWeight: "800",
+                      fontSize: "0.78rem",
+                    }}
+                  >
+                    {selectedDetailTyre.badge || "Featured"}
+                  </span>
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "999px",
+                      background: (selectedDetailTyre.showOnHome !== false && selectedDetailTyre.show_on_home !== false) ? "#f0fdf4" : "#f8fafc",
+                      border: (selectedDetailTyre.showOnHome !== false && selectedDetailTyre.show_on_home !== false) ? "1px solid #86efac" : "1px solid #cbd5e1",
+                      color: (selectedDetailTyre.showOnHome !== false && selectedDetailTyre.show_on_home !== false) ? "#15803d" : "#64748b",
+                      fontWeight: "700",
+                      fontSize: "0.76rem",
+                    }}
+                  >
+                    {(selectedDetailTyre.showOnHome !== false && selectedDetailTyre.show_on_home !== false) ? "✓ Home Flagship" : "Hidden"}
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "4px" }}>
+                  Rating: ⭐ {selectedDetailTyre.rating || 4.8} / 5.0
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Specs Breakdown (if available) */}
+            {selectedDetailTyre.specs && (
+              <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0", marginBottom: "20px" }}>
+                <div style={{ fontSize: "0.78rem", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>
+                  Technical Parameters & Ratings
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", fontSize: "0.8rem" }}>
+                  {selectedDetailTyre.specs.wetGrip && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Wet Grip</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.wetGrip}</strong>
+                    </div>
+                  )}
+                  {selectedDetailTyre.specs.fuelEfficiency && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Fuel Efficiency</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.fuelEfficiency}</strong>
+                    </div>
+                  )}
+                  {selectedDetailTyre.specs.noiseLevel && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Noise Level</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.noiseLevel}</strong>
+                    </div>
+                  )}
+                  {selectedDetailTyre.specs.speedRating && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Speed Rating</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.speedRating}</strong>
+                    </div>
+                  )}
+                  {selectedDetailTyre.specs.warranty && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Warranty</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.warranty}</strong>
+                    </div>
+                  )}
+                  {selectedDetailTyre.specs.treadwear && (
+                    <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ color: "#64748b", fontSize: "0.72rem", display: "block" }}>Treadwear</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedDetailTyre.specs.treadwear}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Footer Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "16px" }}>
+              <button
+                type="button"
+                onClick={() => setSelectedDetailTyre(null)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#475569",
+                  fontWeight: "700",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetTyre = selectedDetailTyre;
+                  setSelectedDetailTyre(null);
+                  handleOpenEditModal(targetTyre);
+                }}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  color: "#ffffff",
+                  fontWeight: "700",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                }}
+              >
+                <Edit size={15} />
+                Edit Tyre Details
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -4479,6 +6892,78 @@ export default function AdminLayout({
                 />
               </div>
 
+              <div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px",
+                    borderRadius: "12px",
+                    background: "#f8fafc",
+                    border: "1px solid #cbd5e1",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "0.86rem", fontWeight: "700", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Show on Home Screen</span>
+                      <span style={{ fontSize: "0.72rem", background: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: "999px", border: "1px solid #a7f3d0" }}>Max 3 Allowed</span>
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "2px" }}>
+                      Feature this service in the Specialized Services section on the website homepage.
+                    </div>
+                  </div>
+                  <div style={{ position: "relative", width: "44px", height: "24px" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(serviceForm.showOnHome ?? serviceForm.show_on_home)}
+                      onChange={(e) => {
+                        const willBeChecked = e.target.checked;
+                        if (willBeChecked) {
+                          const activeHomeCount = (servicesList || []).filter(
+                            (s) => (!editingService || s.id !== editingService.id) && Boolean(s.showOnHome ?? s.show_on_home)
+                          ).length;
+                          if (activeHomeCount >= 3) {
+                            triggerToast("⚠️ Maximum 3 services can be displayed on the Home page. Please hide another service first.");
+                            return;
+                          }
+                        }
+                        setServiceForm({ ...serviceForm, showOnHome: willBeChecked, show_on_home: willBeChecked });
+                      }}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        cursor: "pointer",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: Boolean(serviceForm.showOnHome ?? serviceForm.show_on_home) ? "#ef4444" : "#cbd5e1",
+                        transition: "0.3s",
+                        borderRadius: "24px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          height: "18px",
+                          width: "18px",
+                          left: Boolean(serviceForm.showOnHome ?? serviceForm.show_on_home) ? "22px" : "3px",
+                          bottom: "3px",
+                          backgroundColor: "white",
+                          transition: "0.3s",
+                          borderRadius: "50%",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px" }}>
                 <button
                   type="button"
@@ -4499,7 +6984,466 @@ export default function AdminLayout({
         </div>
       )}
 
-      {/* Toast Notification */}
+
+
+      {/* ==================== PRIME FEATURE UNLOCK MODAL ==================== */}
+      {showPrimeUnlockModal && selectedPrimeFeatureForUnlock && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10005,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "24px",
+              width: "100%",
+              maxWidth: "520px",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.3)",
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+              maxHeight: "92vh",
+              overflowY: "auto",
+            }}
+          >
+            {/* Modal Top Banner */}
+            <div
+              style={{
+                padding: "24px 26px",
+                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                color: "#ffffff",
+                position: "relative",
+              }}
+            >
+              <button
+                onClick={() => {
+                  if (!isProcessingPayment) setShowPrimeUnlockModal(false);
+                }}
+                disabled={isProcessingPayment}
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  background: "rgba(255,255,255,0.1)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#ffffff",
+                  cursor: isProcessingPayment ? "not-allowed" : "pointer",
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "999px", background: "rgba(251, 191, 36, 0.15)", border: "1px solid rgba(251, 191, 36, 0.35)", color: "#fef08a", fontSize: "0.72rem", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+                <Sparkles size={13} />
+                <span>PREMIUM SUITE UNLOCK</span>
+              </div>
+
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "1.3rem", fontWeight: "900", color: "#ffffff", letterSpacing: "-0.02em" }}>
+                Unlock {selectedPrimeFeatureForUnlock.name}
+              </h3>
+              <p style={{ margin: 0, fontSize: "0.83rem", color: "#94a3b8", lineHeight: 1.4 }}>
+                {selectedPrimeFeatureForUnlock.tagline || selectedPrimeFeatureForUnlock.subtitle || "Enterprise grade pro capabilities for Sadguru Tyres management."}
+              </p>
+            </div>
+
+            {/* Price & Plan Selection */}
+            <div style={{ padding: "24px 26px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+                {/* Single Module Plan */}
+                <div
+                  onClick={() => setSelectedPrimePlan("single")}
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    border: selectedPrimePlan === "single" ? "2px solid #1e3a8a" : "1px solid #cbd5e1",
+                    background: selectedPrimePlan === "single" ? "#eff6ff" : "#f8fafc",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <div style={{ fontSize: "0.72rem", fontWeight: "800", color: selectedPrimePlan === "single" ? "#1e3a8a" : "#64748b", textTransform: "uppercase" }}>
+                    THIS MODULE ONLY
+                  </div>
+                  <div style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", marginTop: "4px" }}>
+                    ₹{Number(selectedPrimeFeatureForUnlock.priceINR || 2000).toLocaleString("en-IN")}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>One-time lifetime fee</div>
+                </div>
+
+                {/* All Bundle Plan */}
+                <div
+                  onClick={() => setSelectedPrimePlan("bundle")}
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    border: selectedPrimePlan === "bundle" ? "2px solid #1e3a8a" : "1px solid #cbd5e1",
+                    background: selectedPrimePlan === "bundle" ? "#eff6ff" : "#f8fafc",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <span style={{ position: "absolute", top: "-8px", right: "10px", background: "#1e3a8a", color: "#ffffff", fontSize: "0.64rem", fontWeight: "800", padding: "2px 6px", borderRadius: "999px" }}>
+                    BEST VALUE
+                  </span>
+                  <div style={{ fontSize: "0.72rem", fontWeight: "800", color: selectedPrimePlan === "bundle" ? "#1e3a8a" : "#64748b", textTransform: "uppercase" }}>
+                    ALL 5 PRIME APPS
+                  </div>
+                  <div style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", marginTop: "4px" }}>
+                    ₹9,000
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>All modules included</div>
+                </div>
+              </div>
+
+              {/* Benefits Checklist */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+                {(selectedPrimePlan === "bundle"
+                  ? [
+                      "Full access to Business & Sales Analytics dashboard",
+                      "24/7 Automated AI Chatbot Support & query resolver",
+                      "Real-time Server Error Monitoring & diagnostics",
+                      "Coupon Management & discount campaign creator",
+                      "WhatsApp Marketing Broadcast Engine & lead engagement",
+                    ]
+                  : selectedPrimeFeatureForUnlock.benefits || [
+                      "Lifetime unlock with zero recurring subscriptions",
+                      "Instant activation with verified Razorpay payment receipt",
+                      "Full administrative control and audit tracking",
+                    ]
+                ).map((b, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>
+                      <Check size={12} />
+                    </div>
+                    <span style={{ fontSize: "0.82rem", color: "#334155" }}>{b}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Security Badge */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "0.75rem", color: "#64748b", marginBottom: "20px" }}>
+                <ShieldCheck size={16} color="#059669" />
+                <span>100% Secure Checkout via UPI, Cards & NetBanking</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  disabled={isProcessingPayment}
+                  onClick={() => setShowPrimeUnlockModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "11px 16px",
+                    borderRadius: "12px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#475569",
+                    fontWeight: "700",
+                    fontSize: "0.85rem",
+                    cursor: isProcessingPayment ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isProcessingPayment}
+                  onClick={() => handleInitiatePrimeRazorpayPayment(selectedPrimeFeatureForUnlock, selectedPrimePlan)}
+                  style={{
+                    flex: 2,
+                    padding: "11px 20px",
+                    borderRadius: "12px",
+                    border: "none",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)",
+                    color: "#ffffff",
+                    fontWeight: "800",
+                    fontSize: "0.9rem",
+                    cursor: isProcessingPayment ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    boxShadow: "0 4px 15px rgba(30, 58, 138, 0.35)",
+                  }}
+                >
+                  <Lock size={15} />
+                  <span>
+                    {isProcessingPayment ? "Connecting Razorpay..." : `Pay ₹${selectedPrimePlan === "bundle" ? "9,000" : Number(selectedPrimeFeatureForUnlock.priceINR || 2000).toLocaleString("en-IN")} & Unlock`}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== PRIME PAYMENT SUCCESS CELEBRATION MODAL ==================== */}
+      {showPrimePaymentSuccessModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10006,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "24px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.3)",
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+              textAlign: "center",
+              padding: "32px 28px",
+            }}
+          >
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "4px solid #d1fae5" }}>
+              <CheckCircle2 size={36} />
+            </div>
+
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "3px 10px", borderRadius: "999px", background: "#ecfdf5", color: "#059669", fontSize: "0.72rem", fontWeight: "800", textTransform: "uppercase", marginBottom: "8px" }}>
+              <Sparkles size={13} />
+              <span>PAYMENT CONFIRMED</span>
+            </div>
+
+            <h3 style={{ margin: "0 0 6px 0", fontSize: "1.35rem", fontWeight: "900", color: "#0f172a" }}>
+              Prime Feature Unlocked!
+            </h3>
+            <p style={{ margin: "0 0 20px 0", fontSize: "0.84rem", color: "#64748b" }}>
+              Your Razorpay transaction was verified successfully. The requested feature is now ready to use.
+            </p>
+
+            <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0", textAlign: "left", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px", fontSize: "0.8rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b" }}>Unlocked:</span>
+                <strong style={{ color: "#0f172a" }}>{primePaymentReceipt?.feature || "Prime Feature"}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b" }}>Payment ID:</span>
+                <span style={{ color: "#ef4444", fontWeight: "700", fontFamily: "monospace" }}>{primePaymentReceipt?.paymentId || "pay_verified"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b" }}>Amount:</span>
+                <strong style={{ color: "#0f172a" }}>₹{Number(primePaymentReceipt?.amount || 2000).toLocaleString("en-IN")} INR</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#64748b" }}>Status:</span>
+                <span style={{ color: "#059669", fontWeight: "800" }}>● Captured & Verified</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button
+                onClick={() => {
+                  setShowPrimePaymentSuccessModal(false);
+                  if (primePaymentReceipt?.featureKey && primePaymentReceipt?.featureKey !== "all") {
+                    setActiveTab(primePaymentReceipt.featureKey);
+                  } else {
+                    setActiveTab("products");
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  border: "none",
+                  color: "#ffffff",
+                  fontWeight: "800",
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                }}
+              >
+                Launch Feature Workspace &rarr;
+              </button>
+              <button
+                onClick={() => setShowPrimePaymentSuccessModal(false)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "10px",
+                  background: "transparent",
+                  border: "1px solid #cbd5e1",
+                  color: "#475569",
+                  fontWeight: "700",
+                  fontSize: "0.84rem",
+                  cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== ADD COUPON MODAL ==================== */}
+      {showAddCouponModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10003,
+            background: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "20px",
+              padding: "24px",
+              maxWidth: "440px",
+              width: "100%",
+              boxShadow: "0 25px 50px rgba(15, 23, 42, 0.25)",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Create Promo Coupon</h3>
+              <button onClick={() => setShowAddCouponModal(false)} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: "4px" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!couponForm.code.trim()) return;
+                const newCoupon = {
+                  id: `cpn-${Date.now()}`,
+                  code: couponForm.code.toUpperCase().replace(/\s+/g, ""),
+                  type: couponForm.type,
+                  value: Number(couponForm.value) || 10,
+                  minSpend: Number(couponForm.minSpend) || 0,
+                  maxDiscount: Number(couponForm.maxDiscount) || 500,
+                  expiry: couponForm.expiry || "2026-12-31",
+                  uses: 0,
+                  status: couponForm.status || "Active",
+                };
+                setCouponsList([newCoupon, ...couponsList]);
+                setShowAddCouponModal(false);
+                triggerToast(`Created coupon code "${newCoupon.code}"!`);
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Coupon Code *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. MONSOON25"
+                  value={couponForm.code}
+                  onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.9rem", outline: "none", textTransform: "uppercase", fontWeight: "700" }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Discount Type</label>
+                  <select
+                    value={couponForm.type}
+                    onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value })}
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="flat">Flat Amount (₹)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Discount Value *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder={couponForm.type === "percentage" ? "e.g. 15" : "e.g. 500"}
+                    value={couponForm.value}
+                    onChange={(e) => setCouponForm({ ...couponForm, value: e.target.value })}
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Min Cart Value (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 2000"
+                    value={couponForm.minSpend}
+                    onChange={(e) => setCouponForm({ ...couponForm, minSpend: e.target.value })}
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Max Cap (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 1000"
+                    value={couponForm.maxDiscount}
+                    onChange={(e) => setCouponForm({ ...couponForm, maxDiscount: e.target.value })}
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "700", color: "#334155", marginBottom: "4px" }}>Expiry Date</label>
+                <input
+                  type="date"
+                  value={couponForm.expiry}
+                  onChange={(e) => setCouponForm({ ...couponForm, expiry: e.target.value })}
+                  style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "6px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCouponModal(false)}
+                  style={{ padding: "9px 16px", borderRadius: "10px", border: "1px solid #cbd5e1", background: "#ffffff", color: "#475569", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: "9px 20px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#ffffff", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
+                >
+                  Save Coupon
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {notificationMsg && (
         <div
           style={{

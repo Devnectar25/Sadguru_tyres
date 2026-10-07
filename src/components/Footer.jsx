@@ -10,7 +10,8 @@ export default function Footer({
   onNavigateContact,
   onNavigatePrivacy,
   onNavigateTerms,
-  onOpenAdmin
+  onOpenAdmin,
+  shopSettings = {},
 }) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -81,8 +82,8 @@ export default function Footer({
       style={{
         background: "#EAF2FC",
         position: "relative",
-        paddingTop: "12px",
-        paddingBottom: "16px",
+        paddingTop: "20px",
+        paddingBottom: "20px",
         color: "#334155",
         borderTop: "1px solid #d8e5f3",
       }}
@@ -239,14 +240,14 @@ export default function Footer({
             <div className="footer-contact-list" style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.88rem", marginBottom: "0" }}>
               <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#0f172a", fontWeight: "600" }}>
                 <Phone size={15} color="#ef4444" />
-                <span>+91 1800 15 11 00</span>
+                <span>+91 {shopSettings?.tollFreePhone || "1800 15 11 00"}</span>
               </div>
               <div className="footer-contact-item" style={{ display: "flex", alignItems: "center", gap: "10px", color: "#334155" }}>
                 <Mail size={15} color="#0f172a" />
-                <span>care@sadgurutyres.com</span>
+                <span>{shopSettings?.email || "care@sadgurutyres.com"}</span>
               </div>
               <a
-                href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+                href={shopSettings?.googleMapsUrl || "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-contact-item"
@@ -270,10 +271,10 @@ export default function Footer({
             </div>
 
             <p style={{ fontSize: "0.82rem", lineHeight: 1.6, color: "#475569", marginTop: "2px" }}>
-              📍 Near Bus Stand, Main Road, Pune, Maharashtra 411001
+              📍 {shopSettings?.shortAddress || shopSettings?.address || "Near Bus Stand, Main Road, Pune, Maharashtra 411001"}
             </p>
             <p style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "4px" }}>
-              Mon – Sat: 9 AM – 8 PM | Sun: Closed
+              {shopSettings?.weekdayHours || "Mon – Sat: 9 AM – 8 PM"} | {shopSettings?.sundayHours || "Sun: Closed"}
             </p>
 
           </div>
