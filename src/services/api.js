@@ -1,6 +1,19 @@
 // API Service Client for Sadguru Tyres Backend API with Request Deduplication
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const normalizeApiUrl = (url) => {
+  if (!url) return "http://localhost:5000/api";
+  let cleaned = url.trim().replace(/\/+$/, "");
+  if (!cleaned.endsWith("/api")) {
+    cleaned += "/api";
+  }
+  return cleaned;
+};
+
+const API_BASE_URL = normalizeApiUrl(import.meta.env.VITE_API_BASE_URL);
+
+if (typeof window !== "undefined") {
+  console.log(`[API Service] Configured Base URL: ${API_BASE_URL}`);
+}
 
 // In-flight request deduplication map to prevent redundant concurrent network calls
 const inflightGetRequests = new Map();
@@ -14,6 +27,10 @@ async function deduplicatedGet(url) {
     .then(async (res) => {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       return await res.json();
+    })
+    .catch((err) => {
+      console.warn(`[API GET Warning] Failed fetching ${url}:`, err.message);
+      throw err;
     })
     .finally(() => {
       // Clear after the current microtask to allow future refresh fetches when needed
@@ -31,6 +48,7 @@ export const apiService = {
       const res = await fetch(`${API_BASE_URL}/health`);
       return res.ok;
     } catch (err) {
+      console.warn("[API Health Check] Backend server unreachable:", err.message);
       return false;
     }
   },
