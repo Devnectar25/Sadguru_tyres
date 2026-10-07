@@ -23,7 +23,27 @@ export default function FeaturedProducts({
   const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
 
   const filteredTyres = sourceData.filter((tyre) => {
+    const isVisible = tyre.showOnHome !== false && tyre.show_on_home !== false && tyre.visual_specs?.show_on_home !== false;
+    if (!isVisible) return false;
     if (activeCategory === "All") return true;
+    if (activeCategory === "Superbike & Motorcycle") {
+      return tyre.vehicleType === "Bikes" || (tyre.category && (tyre.category.toLowerCase().includes("superbike") || tyre.category.toLowerCase().includes("motorcycle")));
+    }
+    if (activeCategory === "Electric Vehicle EV") {
+      return (tyre.category && (tyre.category.toLowerCase().includes("electric") || tyre.category.toLowerCase().includes("ev"))) || (tyre.tyreType && tyre.tyreType.toLowerCase().includes("ev")) || tyre.vehicleType === "EVs";
+    }
+    if (activeCategory === "4x4 & Off-Road") {
+      return (tyre.category && (tyre.category.toLowerCase().includes("4x4") || tyre.category.toLowerCase().includes("off-road") || tyre.category.toLowerCase().includes("all-terrain"))) || (tyre.tyreType && tyre.tyreType.toLowerCase().includes("all-terrain"));
+    }
+    if (activeCategory === "Winter / Extreme Cold") {
+      return (tyre.category && (tyre.category.toLowerCase().includes("winter") || tyre.category.toLowerCase().includes("cold"))) || (tyre.tyreType && tyre.tyreType.toLowerCase().includes("winter"));
+    }
+    if (activeCategory === "All-Season Touring") {
+      return (tyre.category && (tyre.category.toLowerCase().includes("touring") || tyre.category.toLowerCase().includes("all-season"))) || (tyre.tyreType && tyre.tyreType.toLowerCase().includes("all-season"));
+    }
+    if (activeCategory === "Ultra-High Performance") {
+      return (tyre.category && tyre.category.toLowerCase().includes("ultra-high")) || (tyre.performanceLevel && tyre.performanceLevel.toLowerCase().includes("ultra-high")) || (tyre.tyreType && tyre.tyreType.toLowerCase().includes("track"));
+    }
     return tyre.category === activeCategory || tyre.tyreType === activeCategory;
   });
 

@@ -16,7 +16,7 @@ import {
   HelpCircle
 } from "lucide-react";
 
-export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLead, faqsList = [] }) {
+export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLead, faqsList = [], shopSettings = {} }) {
   const [formState, setFormState] = useState({
     name: "",
     email: "",
@@ -197,7 +197,7 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
               <span>Book Appointment Now</span>
             </button>
             <a
-              href="tel:1800151100"
+              href={`tel:${(shopSettings?.tollFreePhone || "1800 15 11 00").replace(/\s+/g, "")}`}
               style={{
                 padding: "12px 24px",
                 borderRadius: "999px",
@@ -214,7 +214,7 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
               }}
             >
               <Phone size={17} color="#ef4444" />
-              <span>Hotline: 1800 15 11 00</span>
+              <span>Hotline: {shopSettings?.tollFreePhone || "1800 15 11 00"}</span>
             </a>
           </div>
         </div>
@@ -447,12 +447,14 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
                     <MapPin size={20} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>Main Workshop Hub</div>
+                    <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>
+                      {shopSettings?.hubName || "Main Workshop Hub"}
+                    </div>
                     <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px", lineHeight: 1.5 }}>
-                      Sadguru Tyres & Alignment Center, Main Highway Junction, Pune, Maharashtra 411001
+                      {shopSettings?.address || "Sadguru Tyres & Alignment Center, Main Highway Junction, Pune, Maharashtra 411001"}
                     </div>
                     <a
-                      href="https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"
+                      href={shopSettings?.googleMapsUrl || "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8"}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -478,10 +480,10 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
                   <div>
                     <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>Phone Hotlines</div>
                     <div style={{ fontSize: "0.85rem", color: "#334155", marginTop: "2px", fontWeight: "600" }}>
-                      Toll-Free: 1800 15 11 00
+                      Toll-Free: {shopSettings?.tollFreePhone || "1800 15 11 00"}
                     </div>
                     <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px" }}>
-                      Direct: +91 98220 12345 / 020 2543 8899
+                      Direct: {shopSettings?.directPhone || "+91 98220 12345 / 020 2543 8899"}
                     </div>
                   </div>
                 </div>
@@ -493,10 +495,10 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
                   <div>
                     <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "#0f172a" }}>Workshop Hours</div>
                     <div style={{ fontSize: "0.85rem", color: "#64748b", marginTop: "2px" }}>
-                      Mon - Sat: 9:00 AM - 8:30 PM
+                      {shopSettings?.weekdayHours || "Mon - Sat: 9:00 AM - 8:30 PM"}
                     </div>
                     <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                      Sun: 10:00 AM - 4:00 PM (Open 7 Days)
+                      {shopSettings?.sundayHours || "Sun: 10:00 AM - 4:00 PM (Open 7 Days)"}
                     </div>
                   </div>
                 </div>
@@ -528,7 +530,7 @@ export default function ContactPage({ onNavigateHome, onOpenBooking, onSubmitLea
                 </div>
 
                 <a
-                  href="tel:1800151100"
+                  href={`tel:${(shopSettings?.tollFreePhone || "1800 15 11 00").replace(/\s+/g, "")}`}
                   style={{
                     padding: "10px 18px",
                     borderRadius: "999px",

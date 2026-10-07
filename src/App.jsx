@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import FeaturedProducts from "./components/FeaturedProducts";
@@ -54,6 +54,7 @@ export function normalizeTyre(t) {
 
   const priceINR = Number(t.priceINR ?? t.price_inr ?? 12500) || 12500;
   const priceUSD = Number(t.priceUSD ?? t.price_usd ?? 165) || 165;
+  const showOnHome = t.showOnHome !== false && t.show_on_home !== false && (t.visual_specs?.show_on_home !== false);
 
   return {
     ...t,
@@ -75,6 +76,8 @@ export function normalizeTyre(t) {
     image: t.image || t.image_url || "/images/hero_tyre.jpg",
     image2: t.image2 || "",
     image3: t.image3 || "",
+    showOnHome,
+    show_on_home: showOnHome,
     gallery: Array.isArray(t.gallery) && t.gallery.length > 0 
       ? t.gallery 
       : [t.image || t.image_url || "/images/hero_tyre.jpg", t.image2, t.image3].filter(Boolean),
@@ -100,6 +103,7 @@ export function normalizeTyre(t) {
 }
 
 export default function App() {
+  const [debugApi, setDebugApi] = useState("Loading API...");
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [isChatbotEnabled, setIsChatbotEnabled] = useState(() => {
     const saved = localStorage.getItem("sadguru_chatbot_enabled");
@@ -149,29 +153,12 @@ export default function App() {
   }, [targetServiceId]);
 
   // Dynamic Store & Inventory State
-  const [tyresDataList, setTyresDataList] = useState(() => {
-    try {
-      const saved = localStorage.getItem("sadguru_tyres_list");
-      if (saved && saved !== "undefined" && saved !== "null") {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const clean = parsed.filter(Boolean).map(normalizeTyre).filter(Boolean);
-          if (clean.length > 0) return clean;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse saved tyres list:", e);
-    }
-    return TYRES_DATA.map(normalizeTyre).filter(Boolean);
-  });
+  // Always start with static data; the API useEffect below immediately overwrites with live DB data.
+  const [tyresDataList, setTyresDataList] = useState(() =>
+    TYRES_DATA.map(normalizeTyre).filter(Boolean)
+  );
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("sadguru_tyres_list", JSON.stringify(tyresDataList));
-    } catch (err) {
-      console.warn("Could not save tyres list to localStorage:", err);
-    }
-  }, [tyresDataList]);
+  // No longer caching tyres in localStorage — the API/DB is the source of truth.
 
   // Global Error Monitoring Listener
   useEffect(() => {
@@ -217,20 +204,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    async function loadTyresFromApi() {
-      try {
-        const apiTyres = await apiService.getTyres();
-        if (apiTyres && Array.isArray(apiTyres) && apiTyres.length > 0) {
-          const mapped = apiTyres.filter(Boolean).map(normalizeTyre).filter(Boolean);
-          if (mapped.length > 0) setTyresDataList(mapped);
-        }
-      } catch (err) {
-        console.error("Error loading tyres from API:", err);
-      }
-    }
-    loadTyresFromApi();
-  }, []);
   const [bookingsList, setBookingsList] = useState([
     { customerName: "Rajesh Sharma", carModel: "Honda City (2022)", serviceName: "4-Wheel Alignment & Balancing", date: "2026-10-02", timeSlot: "11:00 AM", phone: "+91 98220 44556", status: "Confirmed", totalINR: 1850 },
     { customerName: "Vikramaditya Deshmukh", carModel: "Toyota Fortuner", serviceName: "Run-Flat Tyre Replacement", date: "2026-10-03", timeSlot: "02:30 PM", phone: "+91 94230 11223", status: "Pending", totalINR: 24500 },
@@ -305,22 +278,86 @@ export default function App() {
     }
   }, [brandsList]);
 
-  useEffect(() => {
-    async function loadBrandsFromApi() {
-      try {
-        const apiBrands = await apiService.getBrands();
-        if (apiBrands && Array.isArray(apiBrands) && apiBrands.length > 0) {
-          setBrandsList(apiBrands.filter(Boolean));
-        }
-      } catch (err) {
-        console.error("Error loading brands from API:", err);
-      }
-    }
-    loadBrandsFromApi();
-  }, []);
-
   const [faqsList, setFaqsList] = useState([]);
-  const [servicesList, setServicesList] = useState(SERVICES_DATA);
+  const [servicesList, setServicesList] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sadguru_services_list");
+      if (saved && saved !== "undefined" && saved !== "null") {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn("Could not parse saved services list:", e);
+    }
+    return SERVICES_DATA;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("sadguru_services_list", JSON.stringify(servicesList));
+    } catch (err) {
+      console.warn("Could not save services to localStorage:", err);
+    }
+  }, [servicesList]);
+
+  // Dynamic Workshop & Shop Settings State
+  const DEFAULT_SHOP_SETTINGS = {
+    storeName: "Sadguru Tyres & Alignment Center",
+    hubName: "Main Workshop Hub",
+    address: "Sadguru Tyres & Alignment Center, Main Highway Junction, Pune, Maharashtra 411001",
+    shortAddress: "Near Bus Stand, Main Road, Pune, Maharashtra 411001",
+    googleMapsUrl: "https://maps.app.goo.gl/j9kVxiwCqT5APoYL8",
+    tollFreePhone: "1800 15 11 00",
+    directPhone: "+91 98220 12345 / 020 2543 8899",
+    email: "care@sadgurutyres.com",
+    weekdayHours: "Mon - Sat: 9:00 AM - 8:30 PM",
+    sundayHours: "Sun: 10:00 AM - 4:00 PM (Open 7 Days)",
+    closedNotice: "Open 7 Days",
+    currency: "INR",
+    expressTurnaround: "Express 30-minute fitment & alignment.",
+  };
+
+  const [shopSettings, setShopSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sadguru_shop_settings");
+      if (saved && saved !== "undefined" && saved !== "null") {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+          return { ...DEFAULT_SHOP_SETTINGS, ...parsed };
+        }
+      }
+    } catch (_) {}
+    return DEFAULT_SHOP_SETTINGS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("sadguru_shop_settings", JSON.stringify(shopSettings));
+    } catch (err) {
+      console.warn("Could not save shop settings to localStorage:", err);
+    }
+  }, [shopSettings]);
+
+  const handleUpdateShopSettings = async (newSettings) => {
+    const merged = { ...DEFAULT_SHOP_SETTINGS, ...shopSettings, ...newSettings, updated_at: new Date().toISOString() };
+    setShopSettings(merged);
+    try {
+      localStorage.setItem("sadguru_shop_settings", JSON.stringify(merged));
+      await apiService.updateSettings(merged);
+    } catch (err) {
+      console.warn("Could not save shop settings to backend:", err);
+    }
+  };
+
+  const handleResetShopSettings = async () => {
+    setShopSettings(DEFAULT_SHOP_SETTINGS);
+    try {
+      localStorage.removeItem("sadguru_shop_settings");
+      await apiService.resetSettings();
+    } catch (err) {
+      console.warn("Could not reset shop settings:", err);
+    }
+  };
 
   // App settings & interactions
   const [currency, setCurrency] = useState("INR");
@@ -340,16 +377,39 @@ export default function App() {
     setTyresDataList((prev) => [newTyre, ...prev]);
     const res = await apiService.addTyre(newTyre);
     if (res && res.data) {
+      const d = res.data;
       const savedTyre = {
         ...newTyre,
-        ...res.data,
-        priceINR: res.data.price_inr ?? res.data.priceINR ?? newTyre.priceINR,
-        priceUSD: res.data.price_usd ?? res.data.priceUSD ?? newTyre.priceUSD,
-        vehicleType: res.data.vehicle_type ?? res.data.vehicleType ?? newTyre.vehicleType,
-        tyreType: res.data.tyre_type ?? res.data.tyreType ?? newTyre.tyreType,
-        performanceLevel: res.data.performance_level ?? res.data.performanceLevel ?? newTyre.performanceLevel,
-        rimSize: res.data.rim_size ?? res.data.rimSize ?? newTyre.rimSize,
-        availableSizes: newTyre.availableSizes || [`${newTyre.width}/${newTyre.profile} R${newTyre.rimSize}`],
+        // Overwrite with confirmed DB values, mapping snake_case → camelCase
+        id: d.id ?? newTyre.id,
+        name: d.name ?? newTyre.name,
+        brand: d.brand ?? newTyre.brand,
+        vehicleType: d.vehicle_type ?? newTyre.vehicleType,
+        tyreType: d.tyre_type ?? newTyre.tyreType,
+        performanceLevel: d.performance_level ?? newTyre.performanceLevel,
+        width: d.width ?? newTyre.width,
+        profile: d.profile ?? newTyre.profile,
+        rimSize: d.rim_size ?? newTyre.rimSize,
+        category: d.category ?? newTyre.category,
+        badge: d.badge ?? newTyre.badge,
+        priceINR: d.price_inr ?? newTyre.priceINR,
+        priceUSD: d.price_usd ?? newTyre.priceUSD,
+        stock: d.stock ?? newTyre.stock,
+        rating: d.rating ?? newTyre.rating ?? 4.8,
+        reviewsCount: d.reviews_count ?? newTyre.reviewsCount ?? 1,
+        image: d.image ?? newTyre.image,
+        image2: d.visual_specs?.image2 ?? newTyre.image2 ?? "",
+        image3: d.visual_specs?.image3 ?? newTyre.image3 ?? "",
+        showOnHome: d.show_on_home !== undefined ? d.show_on_home : (d.visual_specs?.show_on_home !== undefined ? d.visual_specs.show_on_home : newTyre.showOnHome !== false),
+        show_on_home: d.show_on_home !== undefined ? d.show_on_home : (d.visual_specs?.show_on_home !== undefined ? d.visual_specs.show_on_home : newTyre.showOnHome !== false),
+        tagline: d.tagline ?? newTyre.tagline,
+        description: d.description ?? newTyre.description ?? "",
+        specs: d.specs ?? newTyre.specs ?? {},
+        availableSizes: d.available_sizes?.length
+          ? d.available_sizes
+          : newTyre.availableSizes ?? [`${newTyre.width}/${newTyre.profile} R${newTyre.rimSize}`],
+        highlights: d.highlights ?? newTyre.highlights ?? [],
+        dateAdded: d.date_added ?? newTyre.dateAdded,
       };
       setTyresDataList((prev) => prev.map((t) => (t.id === newTyre.id ? savedTyre : t)));
     }
@@ -359,7 +419,41 @@ export default function App() {
     setTyresDataList((prev) =>
       prev.map((t) => (t.id === updatedTyre.id ? updatedTyre : t))
     );
-    await apiService.updateTyre(updatedTyre.id, updatedTyre);
+    const res = await apiService.updateTyre(updatedTyre.id, updatedTyre);
+    if (res && res.data) {
+      const d = res.data;
+      const savedTyre = {
+        ...updatedTyre,
+        id: d.id ?? updatedTyre.id,
+        name: d.name ?? updatedTyre.name,
+        brand: d.brand ?? updatedTyre.brand,
+        vehicleType: d.vehicle_type ?? updatedTyre.vehicleType,
+        tyreType: d.tyre_type ?? updatedTyre.tyreType,
+        performanceLevel: d.performance_level ?? updatedTyre.performanceLevel,
+        width: d.width ?? updatedTyre.width,
+        profile: d.profile ?? updatedTyre.profile,
+        rimSize: d.rim_size ?? updatedTyre.rimSize,
+        category: d.category ?? updatedTyre.category,
+        badge: d.badge ?? updatedTyre.badge,
+        priceINR: d.price_inr ?? updatedTyre.priceINR,
+        priceUSD: d.price_usd ?? updatedTyre.priceUSD,
+        stock: d.stock ?? updatedTyre.stock,
+        rating: d.rating ?? updatedTyre.rating,
+        reviewsCount: d.reviews_count ?? updatedTyre.reviewsCount,
+        image: d.image ?? updatedTyre.image,
+        image2: d.visual_specs?.image2 ?? updatedTyre.image2 ?? "",
+        image3: d.visual_specs?.image3 ?? updatedTyre.image3 ?? "",
+        showOnHome: d.show_on_home !== undefined ? d.show_on_home : (d.visual_specs?.show_on_home !== undefined ? d.visual_specs.show_on_home : updatedTyre.showOnHome !== false),
+        show_on_home: d.show_on_home !== undefined ? d.show_on_home : (d.visual_specs?.show_on_home !== undefined ? d.visual_specs.show_on_home : updatedTyre.showOnHome !== false),
+        tagline: d.tagline ?? updatedTyre.tagline,
+        description: d.description ?? updatedTyre.description,
+        specs: d.specs ?? updatedTyre.specs,
+        availableSizes: d.available_sizes?.length ? d.available_sizes : updatedTyre.availableSizes,
+        highlights: d.highlights ?? updatedTyre.highlights,
+        dateAdded: d.date_added ?? updatedTyre.dateAdded,
+      };
+      setTyresDataList((prev) => prev.map((t) => (t.id === updatedTyre.id ? savedTyre : t)));
+    }
   };
 
   const handleDeleteTyre = async (tyreId) => {
@@ -404,23 +498,54 @@ export default function App() {
       console.warn("FAQ limit reached: Maximum 5 FAQs allowed.");
       return;
     }
-    setFaqsList((prev) => [newFaq, ...prev]);
-    const res = await apiService.createFaq(newFaq);
-    if (res && res.data) {
-      setFaqsList((prev) => prev.map((f) => (f.id === newFaq.id ? res.data : f)));
+    const tempId = newFaq.id || `faq_${Date.now()}`;
+    const faqObj = { ...newFaq, id: tempId };
+    setFaqsList((prev) => [faqObj, ...prev]);
+    try {
+      const res = await apiService.createFaq(faqObj);
+      if (res && res.data) {
+        setFaqsList((prev) => prev.map((f) => (f.id === tempId ? res.data : f)));
+      }
+    } catch (err) {
+      console.error("Failed to add FAQ to backend:", err);
     }
   };
 
-  const handleUpdateFaq = async (updatedFaq) => {
+  const handleUpdateFaq = async (arg1, arg2) => {
+    let id, updatedData;
+    if (arg2 && typeof arg2 === "object") {
+      id = arg1;
+      updatedData = { ...arg2, id };
+    } else if (arg1 && typeof arg1 === "object") {
+      id = arg1.id;
+      updatedData = arg1;
+    } else {
+      id = arg1;
+      updatedData = { id };
+    }
+
     setFaqsList((prev) =>
-      prev.map((f) => (f.id === updatedFaq.id ? updatedFaq : f))
+      prev.map((f) => (String(f.id) === String(id) ? { ...f, ...updatedData } : f))
     );
-    await apiService.updateFaq(updatedFaq.id, updatedFaq);
+    try {
+      const res = await apiService.updateFaq(id, updatedData);
+      if (res && res.data) {
+        setFaqsList((prev) =>
+          prev.map((f) => (String(f.id) === String(id) ? res.data : f))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update FAQ on backend:", err);
+    }
   };
 
   const handleDeleteFaq = async (faqId) => {
-    setFaqsList((prev) => prev.filter((f) => f.id !== faqId));
-    await apiService.deleteFaq(faqId);
+    setFaqsList((prev) => prev.filter((f) => String(f.id) !== String(faqId)));
+    try {
+      await apiService.deleteFaq(faqId);
+    } catch (err) {
+      console.error("Failed to delete FAQ on backend:", err);
+    }
   };
 
   const handleAddService = async (newService) => {
@@ -435,7 +560,16 @@ export default function App() {
     setServicesList((prev) =>
       prev.map((s) => (s.id === updatedService.id ? updatedService : s))
     );
-    await apiService.updateService(updatedService.id, updatedService);
+    try {
+      const res = await apiService.updateService(updatedService.id, updatedService);
+      if (res && res.data) {
+        setServicesList((prev) =>
+          prev.map((s) => (s.id === updatedService.id ? res.data : s))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update service on backend:", err);
+    }
   };
 
   const handleDeleteService = async (serviceId) => {
@@ -477,40 +611,60 @@ export default function App() {
     await apiService.deleteLead(id);
   };
 
-  // Fetch live bookings, quotes, tyres, brands, FAQs, services, and leads from API on mount
-  useEffect(() => {
-    async function loadApiData() {
-      const [apiBookings, apiQuotes, apiTyres, apiBrands, apiFaqs, apiServices, apiLeads] = await Promise.all([
-        apiService.getBookings(),
-        apiService.getQuotes(),
-        apiService.getTyres(),
-        apiService.getBrands(),
-        apiService.getFaqs(),
-        apiService.getServices(),
-        apiService.getLeads(),
-      ]);
+  const hasInitializedDataRef = useRef(false);
 
-      if (apiBookings && apiBookings.length > 0) {
-        setBookingsList(apiBookings);
-      }
-      if (apiQuotes && apiQuotes.length > 0) {
-        setQuotesList(apiQuotes);
-      }
-      if (apiTyres && apiTyres.length > 0) {
-        const normalized = apiTyres.filter(Boolean).map(normalizeTyre).filter(Boolean);
-        if (normalized.length > 0) setTyresDataList(normalized);
-      }
-      if (apiBrands && apiBrands.length > 0) {
-        setBrandsList(apiBrands);
-      }
-      if (apiFaqs && apiFaqs.length > 0) {
-        setFaqsList(apiFaqs);
-      }
-      if (apiServices && apiServices.length > 0) {
-        setServicesList(apiServices);
-      }
-      if (apiLeads && apiLeads.length > 0) {
-        setLeadsList(apiLeads);
+  // Fetch live bookings, quotes, tyres, brands, FAQs, services, leads, and settings ONCE on mount
+  useEffect(() => {
+    if (hasInitializedDataRef.current) return;
+    hasInitializedDataRef.current = true;
+
+    async function loadApiData() {
+      try {
+        const [apiBookings, apiQuotes, apiTyres, apiBrands, apiFaqs, apiServices, apiLeads, apiSettings] = await Promise.all([
+          apiService.getBookings(),
+          apiService.getQuotes(),
+          apiService.getTyres(),
+          apiService.getBrands(),
+          apiService.getFaqs(),
+          apiService.getServices(),
+          apiService.getLeads(),
+          apiService.getSettings(),
+        ]);
+
+        if (apiBookings && Array.isArray(apiBookings) && apiBookings.length > 0) {
+          setBookingsList(apiBookings);
+        }
+        if (apiQuotes && Array.isArray(apiQuotes) && apiQuotes.length > 0) {
+          setQuotesList(apiQuotes);
+        }
+        if (apiTyres && Array.isArray(apiTyres) && apiTyres.length > 0) {
+          const normalized = apiTyres.filter(Boolean).map(normalizeTyre).filter(Boolean);
+          if (normalized.length > 0) setTyresDataList(normalized);
+        }
+        if (apiBrands && Array.isArray(apiBrands) && apiBrands.length > 0) {
+          setBrandsList(apiBrands.filter(Boolean));
+        }
+        if (apiFaqs && Array.isArray(apiFaqs) && apiFaqs.length > 0) {
+          setFaqsList(apiFaqs);
+        }
+        if (apiServices && Array.isArray(apiServices) && apiServices.length > 0) {
+          setServicesList(apiServices);
+        }
+        if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
+          setLeadsList(apiLeads);
+        }
+        if (apiSettings && typeof apiSettings === "object" && Object.keys(apiSettings).length > 0) {
+          const localSaved = localStorage.getItem("sadguru_shop_settings");
+          let localObj = {};
+          if (localSaved && localSaved !== "undefined" && localSaved !== "null") {
+            try { localObj = JSON.parse(localSaved); } catch (_) {}
+          }
+          const merged = { ...DEFAULT_SHOP_SETTINGS, ...apiSettings, ...localObj };
+          setShopSettings(merged);
+          localStorage.setItem("sadguru_shop_settings", JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.warn("Could not load initial app data from backend:", err);
       }
     }
 
@@ -826,6 +980,9 @@ export default function App() {
             return newVal;
           });
         }}
+        shopSettings={shopSettings}
+        onUpdateShopSettings={handleUpdateShopSettings}
+        onResetShopSettings={handleResetShopSettings}
       />
     );
   }
@@ -851,6 +1008,7 @@ export default function App() {
         currency={currency}
         setCurrency={setCurrency}
         wishlistCount={wishlistIds.length}
+        shopSettings={shopSettings}
       />
 
       {/* VIEW 1: HOME PAGE */}
@@ -951,6 +1109,7 @@ export default function App() {
             setBookingState({ isOpen: true, service: service || null, tyre: null })
           }
           onNavigateHome={handleGoToHome}
+          shopSettings={shopSettings}
         />
       )}
 
@@ -972,6 +1131,7 @@ export default function App() {
           onOpenBooking={() =>
             setBookingState({ isOpen: true, service: null, tyre: null })
           }
+          shopSettings={shopSettings}
         />
       )}
 
@@ -996,6 +1156,7 @@ export default function App() {
         onNavigatePrivacy={handleGoToPrivacy}
         onNavigateTerms={handleGoToTerms}
         onOpenAdmin={() => setCurrentPage("admin")}
+        shopSettings={shopSettings}
       />
 
       {/* Global Interactive Modals */}
@@ -1140,6 +1301,7 @@ export default function App() {
             setCurrentPage("contact");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
+          shopSettings={shopSettings}
         />
       )}
 

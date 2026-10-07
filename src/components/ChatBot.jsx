@@ -16,6 +16,7 @@ export default function ChatBot({
   onOpenBooking,
   onOpenCatalog,
   onOpenContact,
+  shopSettings = {},
 }) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -330,10 +331,19 @@ export default function ChatBot({
       query.includes("address") ||
       query.includes("where")
     ) {
+      const store = shopSettings?.storeName || "Sadguru Tyres & Wheel Care Center";
+      const hub = shopSettings?.hubName || "Main Workshop Hub";
+      const addr = shopSettings?.address || "Sadguru Tyres & Alignment Center, Main Highway Junction, Pune";
+      const toll = shopSettings?.tollFreePhone || "1800 15 11 00";
+      const mail = shopSettings?.email || "care@sadgurutyres.com";
+      const wkHours = shopSettings?.weekdayHours || "Mon – Sat: 9:00 AM – 8:30 PM";
+      const sunHours = shopSettings?.sundayHours || "Sun: 10:00 AM – 4:00 PM (Open 7 Days)";
+      const turnaround = shopSettings?.expressTurnaround || "Express 30-minute fitment & alignment.";
+
       return {
-        text: "📍 **Sadguru Tyres & Wheel Care Center**\n\n• **Operating Hours:** Mon – Sat: 9:00 AM – 8:00 PM (Closed Sundays)\n• **Helpline:** 1800 15 11 00 (Toll-Free)\n• **Email:** care@sadgurutyres.com\n• **Turnaround:** Express 30-minute fitment & alignment.",
+        text: `📍 **${store} (${hub})**\n\n• **Address:** ${addr}\n• **Operating Hours:** ${wkHours} | ${sunHours}\n• **Helpline:** ${toll} (Toll-Free)\n• **Email:** ${mail}\n• **Turnaround:** ${turnaround}`,
         actions: [
-          { label: "📞 Call Now: 1800 15 11 00", type: "call" },
+          { label: `📞 Call Now: ${toll}`, type: "call" },
           { label: "📍 View Contact Section", type: "contact" },
         ],
       };

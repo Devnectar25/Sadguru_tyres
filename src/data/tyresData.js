@@ -15,6 +15,7 @@ export const TYRES_DATA = [
     badge: "Track Master",
     rating: 4.9,
     reviewsCount: 148,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_sport.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_sport.jpg",
@@ -85,6 +86,7 @@ export const TYRES_DATA = [
     badge: "Best Seller",
     rating: 4.95,
     reviewsCount: 312,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_touring.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_touring.jpg",
@@ -155,6 +157,7 @@ export const TYRES_DATA = [
     badge: "Heavy Duty",
     rating: 4.85,
     reviewsCount: 220,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_offroad.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_offroad.jpg",
@@ -225,6 +228,7 @@ export const TYRES_DATA = [
     badge: "Range Booster",
     rating: 4.9,
     reviewsCount: 185,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_ev.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_ev.jpg",
@@ -295,6 +299,7 @@ export const TYRES_DATA = [
     badge: "60° Lean Angle",
     rating: 4.96,
     reviewsCount: 88,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike.jpg",
@@ -364,6 +369,7 @@ export const TYRES_DATA = [
     badge: "50/50 ADV",
     rating: 4.88,
     reviewsCount: 104,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike_adv.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike_adv.jpg",
@@ -433,6 +439,7 @@ export const TYRES_DATA = [
     badge: "Arctic Tested",
     rating: 4.92,
     reviewsCount: 96,
+    showOnHome: true,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_winter.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_winter.jpg",
@@ -503,6 +510,7 @@ export const TYRES_DATA = [
     badge: "Luxury SUV",
     rating: 4.91,
     reviewsCount: 165,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_suv_max.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_suv_max.jpg",
@@ -572,6 +580,7 @@ export const TYRES_DATA = [
     badge: "Superbike Spec",
     rating: 4.98,
     reviewsCount: 194,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike_corsa.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike_corsa.jpg",
@@ -642,6 +651,7 @@ export const TYRES_DATA = [
     badge: "ADV Explorer",
     rating: 4.92,
     reviewsCount: 115,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_bike.jpg",
@@ -711,6 +721,7 @@ export const TYRES_DATA = [
     badge: "Extreme Terrain",
     rating: 4.95,
     reviewsCount: 178,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_suv_at.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_suv_at.jpg",
@@ -780,6 +791,7 @@ export const TYRES_DATA = [
     badge: "Track SUV",
     rating: 4.96,
     reviewsCount: 142,
+    showOnHome: false,
     image: "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_touring.jpg",
     gallery: [
       "https://zfxkqnwmydzoqqojrjms.supabase.co/storage/v1/object/public/tyres_products/tyre_touring.jpg",

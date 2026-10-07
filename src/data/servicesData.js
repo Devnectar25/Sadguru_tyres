@@ -8,6 +8,7 @@ export const SERVICES_DATA = [
     duration: "30 Mins",
     image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: true,
     badge: "Computerized Precision",
     equipment: "Hunter Hawkeye Elite 3D System",
     benefits: [
@@ -26,6 +27,7 @@ export const SERVICES_DATA = [
     duration: "25 Mins",
     image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: true,
     badge: "Road Force Tech",
     equipment: "Corghi Laser Dynamic Diagnostic Balancer",
     benefits: [
@@ -44,6 +46,7 @@ export const SERVICES_DATA = [
     duration: "20 Mins",
     image: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: true,
     badge: "Zero-Rim-Scratch",
     equipment: "Touchless Leverless Automated Demounter",
     benefits: [
@@ -62,6 +65,7 @@ export const SERVICES_DATA = [
     duration: "15 Mins",
     image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: false,
     badge: "Full Safety Audit",
     equipment: "Digital Tread Scanner & TPMS OBD-II Programmer",
     benefits: [
@@ -80,6 +84,7 @@ export const SERVICES_DATA = [
     duration: "10 Mins",
     image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: false,
     badge: "Nitrogen Purge",
     equipment: "Dual-Tower PSA Nitrogen Generator",
     benefits: [
@@ -97,6 +102,7 @@ export const SERVICES_DATA = [
     duration: "25 Mins",
     image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=600&q=80",
     status: "Active",
+    showOnHome: false,
     badge: "24/7 On-Demand",
     equipment: "Fully Outfitted Mobile Tyre Fitting Van",
     benefits: [

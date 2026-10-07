@@ -6,7 +6,7 @@ export default function FinalCTA({ onFinderClick, onExploreClick, onBookClick })
     <section
       id="contact"
       style={{
-        padding: "6px 0",
+        padding: "20px 0",
         position: "relative",
         background: "#ffffff",
         overflow: "hidden",

@@ -19,7 +19,6 @@ export default function CatalogPage({
   const [selectedProfile, setSelectedProfile] = useState("All");
   const [selectedRimSize, setSelectedRimSize] = useState("All");
   const [selectedPerformance, setSelectedPerformance] = useState("All");
-  const [maxPrice, setMaxPrice] = useState(300);
   const [sortBy, setSortBy] = useState("recommended");
 
   const sourceData = tyresData && tyresData.length > 0 ? tyresData : TYRES_DATA;
@@ -45,7 +44,6 @@ export default function CatalogPage({
       if (selectedProfile !== "All" && tyre.profile !== selectedProfile) return false;
       if (selectedRimSize !== "All" && tyre.rimSize !== selectedRimSize) return false;
       if (selectedPerformance !== "All" && tyre.performanceLevel !== selectedPerformance) return false;
-      if ((tyre.priceUSD || 165) > maxPrice) return false;
       return true;
     }).sort((a, b) => {
       const aPrice = a?.priceUSD || 165;
@@ -53,9 +51,10 @@ export default function CatalogPage({
       if (sortBy === "price-low") return aPrice - bPrice;
       if (sortBy === "price-high") return bPrice - aPrice;
       if (sortBy === "newest") return new Date(b.dateAdded) - new Date(a.dateAdded);
-      return b.rating * b.reviewsCount - a.rating * a.reviewsCount;
+      return (b.rating || 0) * (b.reviewsCount || 0) - (a.rating || 0) * (a.reviewsCount || 0);
     });
   }, [
+    sourceData,
     vehicleType,
     searchQuery,
     selectedBrand,
@@ -64,17 +63,16 @@ export default function CatalogPage({
     selectedProfile,
     selectedRimSize,
     selectedPerformance,
-    maxPrice,
     sortBy,
   ]);
 
-  // 10 Products Per Page Pagination
+  // 9 Products Per Page Pagination (3x3 Grid)
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [vehicleType, searchQuery, selectedBrand, selectedTyreType, selectedWidth, selectedProfile, selectedRimSize, selectedPerformance, maxPrice, sortBy]);
+  }, [vehicleType, searchQuery, selectedBrand, selectedTyreType, selectedWidth, selectedProfile, selectedRimSize, selectedPerformance, sortBy]);
 
   const totalPages = Math.ceil(filteredTyres.length / ITEMS_PER_PAGE) || 1;
   const activePage = Math.min(currentPage, totalPages);
@@ -91,7 +89,6 @@ export default function CatalogPage({
     setSelectedProfile("All");
     setSelectedRimSize("All");
     setSelectedPerformance("All");
-    setMaxPrice(300);
     setSortBy("recommended");
   };
 
@@ -207,7 +204,7 @@ export default function CatalogPage({
           }}
         >
           {[
-            { id: "All", label: "All Vehicles", count: TYRES_DATA.length },
+            { id: "All", label: "All Vehicles", count: sourceData.length },
             { id: "Cars", label: "Cars & Sports", icon: Car },
             { id: "SUVs", label: "SUVs & 4x4", icon: Truck },
             { id: "Bikes", label: "Superbikes & ADV", icon: Disc },
@@ -642,7 +639,7 @@ export default function CatalogPage({
             </div>
           )}
 
-          {/* Pagination Controls - 10 Products Per Page */}
+          {/* Pagination Controls - 9 Products Per Page */}
           {filteredTyres.length > 0 && (
             <div
               style={{
