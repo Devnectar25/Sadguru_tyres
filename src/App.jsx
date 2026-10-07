@@ -109,22 +109,45 @@ export default function App() {
     const saved = localStorage.getItem("sadguru_chatbot_enabled");
     return saved !== null ? saved === "true" : true; // Default true
   });
-  // Navigation & Admin Authentication Session State (Persisted across page refresh)
+  // Navigation & Admin Authentication Session State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     return localStorage.getItem("sadguru_admin_auth") === "true";
   });
+
+  // Prime Products & Pro Modules Unlock State (ALL features strictly locked by default)
+  const [unlockedPrimeFeatures, setUnlockedPrimeFeatures] = useState(() => {
+    try {
+      localStorage.removeItem("sadguru_unlocked_prime_features");
+      localStorage.removeItem("sadguru_prime_unlocked");
+      localStorage.removeItem("sadguru_prime_features_v3");
+      localStorage.removeItem("sadguru_prime_features_v2");
+      localStorage.removeItem("sadguru_prime_features_v1");
+      const saved = localStorage.getItem("sadguru_prime_features_v4");
+      if (saved) return JSON.parse(saved);
+      return [];
+    } catch (_) {
+      return [];
+    }
+  });
+
+  // Chatbot is ONLY visible on the user/customer side if purchased & unlocked via Admin
+  const isChatbotPurchased = unlockedPrimeFeatures.includes("all") || unlockedPrimeFeatures.includes("chatbot");
 
   const [currentPage, setCurrentPage] = useState(() => {
     const path = window.location.pathname.toLowerCase();
     const hash = window.location.hash.toLowerCase();
     
-    // Admin takes precedence if in URL
-    if (path.includes("/admin") || hash.includes("#admin")) {
+    // Only open admin if the URL explicitly starts with /admin or #admin
+    if (path.startsWith("/admin") || hash.startsWith("#admin")) {
       return "admin";
     }
     
     const saved = localStorage.getItem("sadguru_current_page");
-    return saved || "home";
+    // Prevent "admin" from ever being restored as the default user landing page
+    if (saved && saved !== "admin") {
+      return saved;
+    }
+    return "home";
   });
   
   const [selectedTyreId, setSelectedTyreId] = useState(() => {
@@ -138,9 +161,11 @@ export default function App() {
   
   const [shouldScrollToProducts, setShouldScrollToProducts] = useState(false);
 
-  // Sync state to localStorage to survive page refresh
+  // Sync customer state to localStorage to survive page refresh (NEVER save "admin")
   useEffect(() => {
-    localStorage.setItem("sadguru_current_page", currentPage);
+    if (currentPage && currentPage !== "admin") {
+      localStorage.setItem("sadguru_current_page", currentPage);
+    }
   }, [currentPage]);
 
   useEffect(() => {
@@ -676,7 +701,7 @@ export default function App() {
     const checkRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
-      if (path.includes("/admin") || hash.includes("#admin")) {
+      if (path.startsWith("/admin") || hash.startsWith("#admin")) {
         setCurrentPage("admin");
       }
     };
@@ -831,13 +856,26 @@ export default function App() {
     }
   };
 
+  // Helper to ensure any lingering #admin hash is cleared from the address bar when browsing customer pages
+  const cleanAdminHashIfPresent = () => {
+    if (window.location.hash && window.location.hash.toLowerCase().includes("admin")) {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, "", window.location.pathname || "/");
+      } else {
+        window.location.hash = "";
+      }
+    }
+  };
+
   const handleGoToProductDetail = (tyre) => {
+    cleanAdminHashIfPresent();
     setSelectedTyreId(tyre.id);
     setCurrentPage("product-detail");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleGoToCatalog = (scrollToProducts = false) => {
+    cleanAdminHashIfPresent();
     const shouldScroll = typeof scrollToProducts === "boolean" ? scrollToProducts : false;
     setCurrentPage("catalog");
     setShouldScrollToProducts(shouldScroll ? Date.now() : false);
@@ -859,6 +897,7 @@ export default function App() {
   };
 
   const handleGoToHome = () => {
+    cleanAdminHashIfPresent();
     setCurrentPage("home");
     setShouldScrollToProducts(false);
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -868,6 +907,7 @@ export default function App() {
   };
 
   const handleGoToServices = (serviceId) => {
+    cleanAdminHashIfPresent();
     setCurrentPage("services");
     if (typeof serviceId === "string" && serviceId.trim()) {
       setTargetServiceId(serviceId.trim());
@@ -878,26 +918,40 @@ export default function App() {
   };
 
   const handleGoToAbout = () => {
+    cleanAdminHashIfPresent();
     setCurrentPage("about");
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
   const handleGoToContact = () => {
+    cleanAdminHashIfPresent();
     setCurrentPage("contact");
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
   const handleGoToPrivacy = () => {
+    cleanAdminHashIfPresent();
     setCurrentPage("privacy");
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
   const handleGoToTerms = () => {
+    cleanAdminHashIfPresent();
     setCurrentPage("terms");
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
+  const handleOpenAdmin = () => {
+    setCurrentPage("admin");
+    if (window.history && window.history.pushState) {
+      window.history.pushState(null, "", "#admin");
+    } else {
+      window.location.hash = "#admin";
+    }
+  };
+
   const scrollToSection = (sectionId) => {
+    cleanAdminHashIfPresent();
     const targetId = sectionId === "about" ? "why-choose-us" : sectionId;
     const doScroll = () => {
       const el = document.getElementById(targetId) || document.getElementById(sectionId);
@@ -926,6 +980,7 @@ export default function App() {
           }}
           onReturnToSite={() => {
             localStorage.removeItem("sadguru_admin_auth");
+            localStorage.setItem("sadguru_current_page", "home");
             setIsAdminAuthenticated(false);
             if (window.history.pushState) {
               window.history.pushState({}, "", "/");
@@ -942,6 +997,7 @@ export default function App() {
         onExitAdmin={() => {
           localStorage.removeItem("sadguru_admin_auth");
           localStorage.removeItem("sadguru_admin_active_tab");
+          localStorage.setItem("sadguru_current_page", "home");
           setIsAdminAuthenticated(false);
           if (window.history.pushState) {
             window.history.pushState({}, "", "/");
@@ -980,6 +1036,15 @@ export default function App() {
             return newVal;
           });
         }}
+        unlockedPrimeFeatures={unlockedPrimeFeatures}
+        onUpdateUnlockedPrimeFeatures={(newFeatures) => {
+          setUnlockedPrimeFeatures(newFeatures);
+          if (newFeatures && newFeatures.length > 0) {
+            localStorage.setItem("sadguru_prime_features_v4", JSON.stringify(newFeatures));
+          } else {
+            localStorage.removeItem("sadguru_prime_features_v4");
+          }
+        }}
         shopSettings={shopSettings}
         onUpdateShopSettings={handleUpdateShopSettings}
         onResetShopSettings={handleResetShopSettings}
@@ -1004,7 +1069,7 @@ export default function App() {
         }
         onOpenLogin={() => setIsLoginOpen(true)}
         onOpenChatBot={() => setIsChatBotOpen((prev) => !prev)}
-        onOpenAdmin={() => setCurrentPage("admin")}
+        onOpenAdmin={handleOpenAdmin}
         currency={currency}
         setCurrency={setCurrency}
         wishlistCount={wishlistIds.length}
@@ -1155,7 +1220,7 @@ export default function App() {
         onNavigateContact={handleGoToContact}
         onNavigatePrivacy={handleGoToPrivacy}
         onNavigateTerms={handleGoToTerms}
-        onOpenAdmin={() => setCurrentPage("admin")}
+        onOpenAdmin={handleOpenAdmin}
         shopSettings={shopSettings}
       />
 
@@ -1278,8 +1343,8 @@ export default function App() {
         </div>
       )}
 
-      {/* AI Chatbot Specialist */}
-      {isChatbotEnabled && (
+      {/* AI Chatbot Specialist (Visible to website visitors ONLY after paid/unlocked in Admin Panel) */}
+      {isChatbotPurchased && isChatbotEnabled && (
         <ChatBot
           isOpen={isChatBotOpen}
           onToggle={(open) => setIsChatBotOpen(open)}
