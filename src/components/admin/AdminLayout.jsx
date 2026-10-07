@@ -89,6 +89,8 @@ export default function AdminLayout({
   onDeleteLead,
   isChatbotEnabled,
   onToggleChatbotEnabled,
+  unlockedPrimeFeatures: externalUnlockedPrimeFeatures,
+  onUpdateUnlockedPrimeFeatures,
   shopSettings,
   onUpdateShopSettings,
   onResetShopSettings,
@@ -101,17 +103,19 @@ export default function AdminLayout({
       const hash = hashRaw.replace("#admin/", "").replace("#admin", "").replace("#", "");
       const validTabs = [
         "dashboard",
-        "analytics",
         "inventory",
         "brands",
         "services",
         "bookings",
         "quotes",
         "leads",
-        "chatbot",
         "subadmins",
-        "error-monitoring",
         "faqs",
+        "analytics",
+        "chatbot",
+        "error-monitoring",
+        "coupons",
+        "whatsapp",
         "products",
         "settings",
       ];
@@ -248,11 +252,14 @@ export default function AdminLayout({
     },
   ];
 
-  const [unlockedPrimeFeatures, setUnlockedPrimeFeatures] = useState(() => {
+  const [internalUnlockedFeatures, setInternalUnlockedFeatures] = useState(() => {
     try {
       localStorage.removeItem("sadguru_unlocked_prime_features");
       localStorage.removeItem("sadguru_prime_unlocked");
-      const saved = localStorage.getItem("sadguru_prime_features_v3");
+      localStorage.removeItem("sadguru_prime_features_v3");
+      localStorage.removeItem("sadguru_prime_features_v2");
+      localStorage.removeItem("sadguru_prime_features_v1");
+      const saved = localStorage.getItem("sadguru_prime_features_v4");
       if (saved) return JSON.parse(saved);
       return [];
     } catch (_) {
@@ -260,10 +267,30 @@ export default function AdminLayout({
     }
   });
 
+  const unlockedPrimeFeatures = externalUnlockedPrimeFeatures !== undefined
+    ? externalUnlockedPrimeFeatures
+    : internalUnlockedFeatures;
+
+  const setUnlockedPrimeFeatures = (newFeatures) => {
+    setInternalUnlockedFeatures(newFeatures);
+    if (onUpdateUnlockedPrimeFeatures) {
+      onUpdateUnlockedPrimeFeatures(newFeatures);
+    } else {
+      if (newFeatures && newFeatures.length > 0) {
+        localStorage.setItem("sadguru_prime_features_v4", JSON.stringify(newFeatures));
+      } else {
+        localStorage.removeItem("sadguru_prime_features_v4");
+      }
+    }
+  };
+
   const handleLockAllPrimeFeatures = () => {
     setUnlockedPrimeFeatures([]);
     setPrimePaymentReceipt(null);
+    localStorage.removeItem("sadguru_prime_features_v4");
     localStorage.removeItem("sadguru_prime_features_v3");
+    localStorage.removeItem("sadguru_prime_features_v2");
+    localStorage.removeItem("sadguru_prime_features_v1");
     localStorage.removeItem("sadguru_unlocked_prime_features");
     localStorage.removeItem("sadguru_prime_unlocked");
     localStorage.removeItem("sadguru_prime_last_receipt");
@@ -271,7 +298,10 @@ export default function AdminLayout({
   };
 
   const isFeatureUnlocked = (featureId) => {
-    return unlockedPrimeFeatures.includes("all") || unlockedPrimeFeatures.includes(featureId);
+    return (
+      Array.isArray(unlockedPrimeFeatures) &&
+      (unlockedPrimeFeatures.includes("all") || unlockedPrimeFeatures.includes(featureId))
+    );
   };
 
   const [showPrimeUnlockModal, setShowPrimeUnlockModal] = useState(false);
@@ -457,7 +487,7 @@ export default function AdminLayout({
             : [...new Set([...unlockedPrimeFeatures, featureKey])];
 
           setUnlockedPrimeFeatures(newUnlocked);
-          localStorage.setItem("sadguru_prime_features_v3", JSON.stringify(newUnlocked));
+          localStorage.setItem("sadguru_prime_features_v4", JSON.stringify(newUnlocked));
           localStorage.setItem("sadguru_prime_last_receipt", JSON.stringify(receiptData));
           setPrimePaymentReceipt(receiptData);
 
@@ -482,7 +512,7 @@ export default function AdminLayout({
             : [...new Set([...unlockedPrimeFeatures, featureKey])];
 
           setUnlockedPrimeFeatures(newUnlocked);
-          localStorage.setItem("sadguru_prime_features_v3", JSON.stringify(newUnlocked));
+          localStorage.setItem("sadguru_prime_features_v4", JSON.stringify(newUnlocked));
           localStorage.setItem("sadguru_prime_last_receipt", JSON.stringify(fallbackReceipt));
           setPrimePaymentReceipt(fallbackReceipt);
 
@@ -776,6 +806,10 @@ export default function AdminLayout({
       case "faqs":
         return perms.includes("bookings_manage") || perms.includes("inventory_write");
       case "chatbot":
+        return perms.includes("bookings_manage");
+      case "coupons":
+        return perms.includes("inventory_write") || perms.includes("bookings_manage");
+      case "whatsapp":
         return perms.includes("bookings_manage");
       case "subadmins":
       case "settings":
@@ -1569,6 +1603,7 @@ export default function AdminLayout({
             msOverflowStyle: "none",
           }}
         >
+          {/* Main Navigation Items */}
           {[
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
             { id: "inventory", label: "Tyre Inventory", icon: Package },
@@ -1579,47 +1614,135 @@ export default function AdminLayout({
             { id: "leads", label: "Leads", icon: Users },
             { id: "subadmins", label: "Sub-Admins", icon: UserCheck },
             { id: "faqs", label: "FAQ Manager", icon: HelpCircle },
+          ]
+            .filter((item) => isTabPermitted(item.id))
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: isActive ? "linear-gradient(135deg, #ef4444, #dc2626)" : "transparent",
+                    color: isActive ? "#ffffff" : "#475569",
+                    fontWeight: isActive ? "700" : "500",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "#f1f5f9";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                    <Icon size={17} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+
+          {/* Dynamic Unlocked Prime Features (Appears ONLY when paid/unlocked) */}
+          {[
+            { id: "analytics", label: "Analytics & Report", icon: BarChart3 },
+            { id: "chatbot", label: "Chatbot Support", icon: Bot },
+            { id: "error-monitoring", label: "Error Monitoring", icon: ShieldAlert },
+            { id: "coupons", label: "Coupons & Discounts", icon: Tag },
+            { id: "whatsapp", label: "WhatsApp Marketing", icon: MessageCircle },
+          ]
+            .filter((item) => isFeatureUnlocked(item.id) && isTabPermitted(item.id))
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: isActive ? "linear-gradient(135deg, #ef4444, #dc2626)" : "transparent",
+                    color: isActive ? "#ffffff" : "#475569",
+                    fontWeight: isActive ? "700" : "500",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "#f1f5f9";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                    <Icon size={17} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+
+          {[
             { id: "products", label: "Prime Products", icon: Layers },
             { id: "settings", label: "Shop Settings", icon: Settings },
           ]
             .filter((item) => isTabPermitted(item.id))
             .map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "9px 12px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: isActive ? "linear-gradient(135deg, #ef4444, #dc2626)" : "transparent",
-                  color: isActive ? "#ffffff" : "#475569",
-                  fontWeight: isActive ? "700" : "500",
-                  fontSize: "0.85rem",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  textAlign: "left",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.background = "#f1f5f9";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                  <Icon size={17} style={{ flexShrink: 0 }} />
-                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
-                </div>
-              </button>
-            );
-          })}
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: isActive ? "linear-gradient(135deg, #ef4444, #dc2626)" : "transparent",
+                    color: isActive ? "#ffffff" : "#475569",
+                    fontWeight: isActive ? "700" : "500",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "#f1f5f9";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                    <Icon size={17} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                  </div>
+                </button>
+              );
+            })}
         </nav>
 
         {/* Dynamic Sidebar Footer */}
@@ -2863,19 +2986,54 @@ export default function AdminLayout({
           {/* ==================== MODULE: COUPONS & DISCOUNTS ==================== */}
           {activeTab === "coupons" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <button
-                    onClick={() => setActiveTab("products")}
-                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
-                  >
-                    &larr; Back to Prime Products
-                  </button>
-                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>Coupons & Promo Codes</h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Create seasonal discount codes for tyre purchases and workshop appointments.
+              {!isFeatureUnlocked("coupons") ? (
+                <div style={{ background: "#ffffff", borderRadius: "24px", padding: "48px 32px", textAlign: "center", border: "1px solid #e2e8f0", maxWidth: "600px", margin: "40px auto", boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "2px solid #fde68a" }}>
+                    <Lock size={30} color="#d97706" />
+                  </div>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "800", background: "#fef3c7", color: "#92400e", padding: "4px 12px", borderRadius: "999px" }}>
+                    PRIME MODULE • PAYMENT REQUIRED
+                  </span>
+                  <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "14px 0 8px 0" }}>
+                    Coupons & Promo Codes
+                  </h2>
+                  <p style={{ fontSize: "0.88rem", color: "#64748b", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+                    Create custom percentage & flat discount codes, set expiration limits, minimum cart spend, and track gross customer savings.
                   </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock(PRIME_FEATURES.find((f) => f.id === "coupons") || { name: "Coupons & Discounts", priceINR: 2000, id: "coupons" });
+                        setSelectedPrimePlan("single");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "800", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)" }}
+                    >
+                      Pay ₹2,000 to Unlock
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("products")}
+                      style={{ padding: "12px 20px", borderRadius: "12px", background: "#ffffff", border: "1px solid #cbd5e1", color: "#475569", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      View All Prime Modules
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                    <div>
+                      <button
+                        onClick={() => setActiveTab("products")}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
+                      >
+                        &larr; Back to Prime Products
+                      </button>
+                      <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>Coupons & Promo Codes</h2>
+                      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                        Create seasonal discount codes for tyre purchases and workshop appointments.
+                      </p>
+                    </div>
 
                 <button
                   onClick={() => {
@@ -2970,26 +3128,63 @@ export default function AdminLayout({
                   </div>
                 ))}
               </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ==================== MODULE: WHATSAPP MARKETING ==================== */}
           {activeTab === "whatsapp" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <button
-                    onClick={() => setActiveTab("products")}
-                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
-                  >
-                    &larr; Back to Prime Products
-                  </button>
-                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>WhatsApp Marketing & Broadcast Hub</h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Send direct promotional WhatsApp campaigns, seasonal maintenance alerts, and service reminders.
+              {!isFeatureUnlocked("whatsapp") ? (
+                <div style={{ background: "#ffffff", borderRadius: "24px", padding: "48px 32px", textAlign: "center", border: "1px solid #e2e8f0", maxWidth: "600px", margin: "40px auto", boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "2px solid #fde68a" }}>
+                    <Lock size={30} color="#d97706" />
+                  </div>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "800", background: "#fef3c7", color: "#92400e", padding: "4px 12px", borderRadius: "999px" }}>
+                    PRIME MODULE • PAYMENT REQUIRED
+                  </span>
+                  <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "14px 0 8px 0" }}>
+                    WhatsApp Marketing Hub
+                  </h2>
+                  <p style={{ fontSize: "0.88rem", color: "#64748b", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+                    Unlock promotional WhatsApp broadcasts, maintenance reminder alerts to leads and buyers, and live delivery simulator.
                   </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock(PRIME_FEATURES.find((f) => f.id === "whatsapp") || { name: "WhatsApp Marketing", priceINR: 2000, id: "whatsapp" });
+                        setSelectedPrimePlan("single");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "800", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)" }}
+                    >
+                      Pay ₹2,000 to Unlock
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("products")}
+                      style={{ padding: "12px 20px", borderRadius: "12px", background: "#ffffff", border: "1px solid #cbd5e1", color: "#475569", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      View All Prime Modules
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                    <div>
+                      <button
+                        onClick={() => setActiveTab("products")}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
+                      >
+                        &larr; Back to Prime Products
+                      </button>
+                      <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>WhatsApp Marketing & Broadcast Hub</h2>
+                      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                        Send direct promotional WhatsApp campaigns, seasonal maintenance alerts, and service reminders.
+                      </p>
+                    </div>
+                  </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
                 {/* Campaign Composer */}
@@ -3112,145 +3307,184 @@ export default function AdminLayout({
                   )}
                 </div>
               </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ==================== MODULE: CHATBOT SUPPORT ==================== */}
           {activeTab === "chatbot" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <button
-                    onClick={() => setActiveTab("products")}
-                    style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
-                  >
-                    &larr; Back to Prime Products
-                  </button>
-                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>AI Chatbot Support Assistant</h2>
-                  <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
-                    Configure automated 24/7 customer inquiry replies, tyre size advisor bot, and test replies.
+              {!isFeatureUnlocked("chatbot") ? (
+                <div style={{ background: "#ffffff", borderRadius: "24px", padding: "48px 32px", textAlign: "center", border: "1px solid #e2e8f0", maxWidth: "600px", margin: "40px auto", boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", border: "2px solid #fde68a" }}>
+                    <Lock size={30} color="#d97706" />
+                  </div>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "800", background: "#fef3c7", color: "#92400e", padding: "4px 12px", borderRadius: "999px" }}>
+                    PRIME MODULE • PAYMENT REQUIRED
+                  </span>
+                  <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#0f172a", margin: "14px 0 8px 0" }}>
+                    AI Chatbot Support Assistant
+                  </h2>
+                  <p style={{ fontSize: "0.88rem", color: "#64748b", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+                    Unlock the 24/7 automated AI concierge on your customer website, customizable greetings, phone hotline fallbacks, and interactive response simulator.
                   </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPrimeFeatureForUnlock(PRIME_FEATURES.find((f) => f.id === "chatbot") || { name: "Chatbot Support", priceINR: 2000, id: "chatbot" });
+                        setSelectedPrimePlan("single");
+                        setShowPrimeUnlockModal(true);
+                      }}
+                      style={{ padding: "12px 24px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "800", fontSize: "0.9rem", cursor: "pointer", boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)" }}
+                    >
+                      Pay ₹2,000 to Unlock
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("products")}
+                      style={{ padding: "12px 20px", borderRadius: "12px", background: "#ffffff", border: "1px solid #cbd5e1", color: "#475569", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                    >
+                      View All Prime Modules
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
-                {/* Chatbot Config Settings */}
-                <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: "0 0 16px 0" }}>Chatbot Configuration</h3>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* Bot Toggle */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px", borderRadius: "12px", background: "#f8fafc", border: "1px solid #cbd5e1" }}>
-                      <div>
-                        <div style={{ fontWeight: "800", fontSize: "0.88rem", color: "#0f172a" }}>Chatbot Status</div>
-                        <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Show floating AI assistant on customer website</div>
-                      </div>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+                    <div>
                       <button
-                        onClick={() => {
-                          const next = !chatbotActive;
-                          setChatbotActive(next);
-                          if (onToggleChatbotEnabled) onToggleChatbotEnabled(next);
-                          triggerToast(`Chatbot is now ${next ? "Enabled" : "Disabled"}`);
-                        }}
-                        style={{ padding: "6px 14px", borderRadius: "8px", border: "none", background: chatbotActive ? "#10b981" : "#cbd5e1", color: "#ffffff", fontWeight: "800", fontSize: "0.8rem", cursor: "pointer" }}
+                        onClick={() => setActiveTab("products")}
+                        style={{ background: "transparent", border: "none", color: "#ef4444", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0, marginBottom: "6px" }}
                       >
-                        {chatbotActive ? "Active ON" : "Disabled OFF"}
+                        &larr; Back to Prime Products
                       </button>
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Greeting Message</label>
-                      <textarea
-                        rows={3}
-                        value={chatbotGreeting}
-                        onChange={(e) => setChatbotGreeting(e.target.value)}
-                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none", fontFamily: "inherit" }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Human Fallback Hotline</label>
-                      <input
-                        type="text"
-                        value={chatbotPhone}
-                        onChange={(e) => setChatbotPhone(e.target.value)}
-                        style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
-                      />
-                    </div>
-
-                    <button
-                      onClick={() => triggerToast("Chatbot settings saved successfully!")}
-                      style={{ padding: "12px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
-                    >
-                      Save Configuration
-                    </button>
-                  </div>
-                </div>
-
-                {/* Interactive Test Simulator */}
-                <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", display: "flex", flexDirection: "column", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
-                    <Bot size={22} color="#10b981" />
-                    <div>
-                      <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Interactive Bot Simulator</h3>
-                      <div style={{ fontSize: "0.74rem", color: "#64748b" }}>Test AI responses in real-time</div>
+                      <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#0f172a", margin: 0 }}>AI Chatbot Support Assistant</h2>
+                      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "4px 0 0 0" }}>
+                        Configure automated 24/7 customer inquiry replies, tyre size advisor bot, and test replies.
+                      </p>
                     </div>
                   </div>
 
-                  <div style={{ flexGrow: 1, minHeight: "220px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", padding: "10px", background: "#f8fafc", borderRadius: "12px", marginBottom: "14px" }}>
-                    {simulatedChatMessages.map((msg, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          alignSelf: msg.from === "user" ? "flex-end" : "flex-start",
-                          background: msg.from === "user" ? "#0f172a" : "#ffffff",
-                          color: msg.from === "user" ? "#ffffff" : "#0f172a",
-                          padding: "10px 14px",
-                          borderRadius: msg.from === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
-                          fontSize: "0.82rem",
-                          maxWidth: "85%",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                          border: msg.from === "bot" ? "1px solid #e2e8f0" : "none",
-                        }}
-                      >
-                        {msg.text}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
+                    {/* Chatbot Config Settings */}
+                    <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                      <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", margin: "0 0 16px 0" }}>Chatbot Configuration</h3>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        {/* Bot Toggle */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px", borderRadius: "12px", background: "#f8fafc", border: "1px solid #cbd5e1" }}>
+                          <div>
+                            <div style={{ fontWeight: "800", fontSize: "0.88rem", color: "#0f172a" }}>Chatbot Status</div>
+                            <div style={{ fontSize: "0.75rem", color: "#64748b" }}>Show floating AI assistant on customer website</div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const next = !chatbotActive;
+                              setChatbotActive(next);
+                              if (onToggleChatbotEnabled) onToggleChatbotEnabled(next);
+                              triggerToast(`Chatbot is now ${next ? "Enabled" : "Disabled"}`);
+                            }}
+                            style={{ padding: "6px 14px", borderRadius: "8px", border: "none", background: chatbotActive ? "#10b981" : "#cbd5e1", color: "#ffffff", fontWeight: "800", fontSize: "0.8rem", cursor: "pointer" }}
+                          >
+                            {chatbotActive ? "Active ON" : "Disabled OFF"}
+                          </button>
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Greeting Message</label>
+                          <textarea
+                            rows={3}
+                            value={chatbotGreeting}
+                            onChange={(e) => setChatbotGreeting(e.target.value)}
+                            style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none", fontFamily: "inherit" }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>Human Fallback Hotline</label>
+                          <input
+                            type="text"
+                            value={chatbotPhone}
+                            onChange={(e) => setChatbotPhone(e.target.value)}
+                            style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.88rem", outline: "none" }}
+                          />
+                        </div>
+
+                        <button
+                          onClick={() => triggerToast("Chatbot settings saved successfully!")}
+                          style={{ padding: "12px", borderRadius: "12px", background: "linear-gradient(135deg, #ef4444, #dc2626)", border: "none", color: "#ffffff", fontWeight: "700", fontSize: "0.88rem", cursor: "pointer" }}
+                        >
+                          Save Configuration
+                        </button>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Interactive Test Simulator */}
+                    <div style={{ background: "#ffffff", borderRadius: "20px", border: "1px solid #e2e8f0", padding: "24px", display: "flex", flexDirection: "column", boxShadow: "0 4px 15px rgba(15, 23, 42, 0.04)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                        <Bot size={22} color="#10b981" />
+                        <div>
+                          <h3 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#0f172a", margin: 0 }}>Interactive Bot Simulator</h3>
+                          <div style={{ fontSize: "0.74rem", color: "#64748b" }}>Test AI responses in real-time</div>
+                        </div>
+                      </div>
+
+                      <div style={{ flexGrow: 1, minHeight: "220px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", padding: "10px", background: "#f8fafc", borderRadius: "12px", marginBottom: "14px" }}>
+                        {simulatedChatMessages.map((msg, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              alignSelf: msg.from === "user" ? "flex-end" : "flex-start",
+                              background: msg.from === "user" ? "#0f172a" : "#ffffff",
+                              color: msg.from === "user" ? "#ffffff" : "#0f172a",
+                              padding: "10px 14px",
+                              borderRadius: msg.from === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                              fontSize: "0.82rem",
+                              maxWidth: "85%",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                              border: msg.from === "bot" ? "1px solid #e2e8f0" : "none",
+                            }}
+                          >
+                            {msg.text}
+                          </div>
+                        ))}
+                      </div>
+
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!testChatInput.trim()) return;
+                          const userMsg = testChatInput;
+                          setSimulatedChatMessages((prev) => [...prev, { from: "user", text: userMsg }]);
+                          setTestChatInput("");
+
+                          setTimeout(() => {
+                            let reply = "I can help check pricing and schedule a service appointment for you at our Sadguru Tyres Pune workshop!";
+                            if (userMsg.toLowerCase().includes("align")) reply = "Our 3D Laser Alignment is ₹2,200 with 30-min precision calibration. Would you like to book now?";
+                            else if (userMsg.toLowerCase().includes("michelin") || userMsg.toLowerCase().includes("apollo") || userMsg.toLowerCase().includes("price")) reply = "We have high performance Michelin, Apollo, and Bridgestone tyres in stock with warranty and instant fitting!";
+                            setSimulatedChatMessages((prev) => [...prev, { from: "bot", text: reply }]);
+                          }, 500);
+                        }}
+                        style={{ display: "flex", gap: "8px" }}
+                      >
+                        <input
+                          type="text"
+                          placeholder="Type a test customer message..."
+                          value={testChatInput}
+                          onChange={(e) => setTestChatInput(e.target.value)}
+                          style={{ flexGrow: 1, padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
+                        />
+                        <button
+                          type="submit"
+                          style={{ padding: "10px 16px", borderRadius: "10px", background: "#0f172a", color: "#ffffff", border: "none", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
+                        >
+                          Send
+                        </button>
+                      </form>
+                    </div>
                   </div>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!testChatInput.trim()) return;
-                      const userMsg = testChatInput;
-                      setSimulatedChatMessages((prev) => [...prev, { from: "user", text: userMsg }]);
-                      setTestChatInput("");
-
-                      setTimeout(() => {
-                        let reply = "I can help check pricing and schedule a service appointment for you at our Sadguru Tyres Pune workshop!";
-                        if (userMsg.toLowerCase().includes("align")) reply = "Our 3D Laser Alignment is ₹2,200 with 30-min precision calibration. Would you like to book now?";
-                        else if (userMsg.toLowerCase().includes("michelin") || userMsg.toLowerCase().includes("apollo") || userMsg.toLowerCase().includes("price")) reply = "We have high performance Michelin, Apollo, and Bridgestone tyres in stock with warranty and instant fitting!";
-                        setSimulatedChatMessages((prev) => [...prev, { from: "bot", text: reply }]);
-                      }, 500);
-                    }}
-                    style={{ display: "flex", gap: "8px" }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Type a test customer message..."
-                      value={testChatInput}
-                      onChange={(e) => setTestChatInput(e.target.value)}
-                      style={{ flexGrow: 1, padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "0.85rem", outline: "none" }}
-                    />
-                    <button
-                      type="submit"
-                      style={{ padding: "10px 16px", borderRadius: "10px", background: "#0f172a", color: "#ffffff", border: "none", fontWeight: "700", fontSize: "0.85rem", cursor: "pointer" }}
-                    >
-                      Send
-                    </button>
-                  </form>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
