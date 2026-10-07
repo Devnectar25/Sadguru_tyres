@@ -296,7 +296,7 @@ export default function Footer({
           }}
         >
           <div className="footer-bottom-copy">
-            © {new Date().getFullYear()} Sadguru Tyres. All rights reserved.
+            © {new Date().getFullYear()} Sadguru Tyres & Mobility Solutions. All rights reserved.
           </div>
 
 
